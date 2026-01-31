@@ -1,7 +1,6 @@
 const axios = require('axios');
 
 const INTERNAL_ADMIN_URL = 'https://internal-admin.pubnub.com';
-const ADMIN_URL = 'https://admin.pubnub.com';
 
 exports.handler = async (event) => {
   if (event.httpMethod !== 'GET') {
@@ -21,9 +20,9 @@ exports.handler = async (event) => {
   try {
     console.log('Attempting authentication for:', username);
     
-    // Step 1: Authenticate with admin.pubnub.com (not internal-admin)
+    // Step 1: Authenticate with internal-admin.pubnub.com
     const authResponse = await axios.post(
-      `${ADMIN_URL}/api/me`,
+      `${INTERNAL_ADMIN_URL}/api/me`,
       { email: username, password: password },
       { timeout: 20000 }
     );
@@ -31,7 +30,7 @@ exports.handler = async (event) => {
     console.log('Auth successful, userId:', authResponse.data.id);
     const { id: userId, token } = authResponse.data;
 
-    // Step 2: Get accounts from internal-admin
+    // Step 2: Get accounts
     const accountsResponse = await axios.get(
       `${INTERNAL_ADMIN_URL}/api/accounts?user_id=${userId}`,
       { 
