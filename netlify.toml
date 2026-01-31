@@ -21,6 +21,5 @@
   external_node_modules = ["axios", "dayjs"]
   included_files = ["netlify/functions/**"]
 
-[[functions]]
-  name = "*"
+[functions."*"]
   timeout = 26
