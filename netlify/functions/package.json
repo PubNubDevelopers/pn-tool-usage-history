@@ -1,7 +1,6 @@
 {
   "name": "netlify-functions",
   "version": "1.0.0",
-  "type": "module",
   "dependencies": {
     "@netlify/functions": "^2.8.2",
     "axios": "^1.13.4",
