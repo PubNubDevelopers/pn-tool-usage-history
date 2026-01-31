@@ -1,5 +1,4 @@
-import { App, UsageData } from '../../types';
-import { formatNumber } from '../../utils/metrics';
+import { App } from '../../types';
 
 interface AppBreakdownTableProps {
   apps: App[];

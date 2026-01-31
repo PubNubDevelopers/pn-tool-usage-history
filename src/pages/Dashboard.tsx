@@ -25,7 +25,6 @@ export default function Dashboard() {
     startDate,
     endDate,
     apps,
-    keys,
   } = useAuth();
 
   const [granularity, setGranularity] = useState<TimeGranularity>('day');

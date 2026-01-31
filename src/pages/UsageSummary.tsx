@@ -24,7 +24,6 @@ export default function UsageSummary() {
   const {
     selectedAccountId,
     apps,
-    fetchKeys,
     startDate,
     endDate,
     session,
@@ -64,16 +63,6 @@ export default function UsageSummary() {
     try {
       const usageData: AppUsage[] = [];
 
-      // Fetch usage for the entire account (aggregated view)
-      const accountResponse = await fetch(
-        `/api/key-usage?accountid=${selectedAccountId}&token=${session.token}&start=${startDate}&end=${endDate}`
-      );
-      
-      if (!accountResponse.ok) {
-        throw new Error('Failed to fetch account usage');
-      }
-
-      const accountUsage = await accountResponse.json();
 
       // For each app, aggregate the usage
       for (const app of apps) {
@@ -112,10 +101,10 @@ export default function UsageSummary() {
               let keyTotal = 0;
 
               // Extract metrics and aggregate by month
-              for (const [metricName, metricData] of Object.entries(keyUsage)) {
+              for (const metricData of Object.values(keyUsage)) {
                 if (typeof metricData !== 'object' || !metricData) continue;
 
-                for (const [monthTimestamp, monthInfo] of Object.entries(metricData as Record<string, any>)) {
+                for (const monthInfo of Object.values(metricData as Record<string, any>)) {
                   if (monthInfo && monthInfo.days) {
                     for (const [dayTimestamp, value] of Object.entries(monthInfo.days)) {
                       const date = new Date(parseInt(dayTimestamp) * 1000);

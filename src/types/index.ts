@@ -30,8 +30,11 @@ export interface KeySet {
 }
 
 export interface UsageMetric {
-  [date: string]: {
-    sum: number;
+  [timestamp: string]: {
+    sum?: number;
+    days?: {
+      [dayTimestamp: string]: number;
+    };
   };
 }
 

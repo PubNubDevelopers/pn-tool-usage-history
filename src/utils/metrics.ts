@@ -1,4 +1,4 @@
-import { UsageData, UsageMetric, ChartDataPoint, FeatureBreakdown, TransactionTypeSummary } from '../types';
+import { UsageData, ChartDataPoint, FeatureBreakdown, TransactionTypeSummary } from '../types';
 
 // Sum all values in a metric (handles new nested timestamp structure)
 export function sumMetrics(metricData?: Record<string, any>): number {

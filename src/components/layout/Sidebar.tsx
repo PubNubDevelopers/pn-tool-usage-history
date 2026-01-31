@@ -71,14 +71,6 @@ export default function Sidebar() {
     }
   }, [selectedAppId, fetchKeys]);
 
-  const handleAccountIdSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const accountId = formData.get('accountId') as string;
-    if (accountId) {
-      setSelectedAccountId(parseInt(accountId, 10));
-    }
-  };
 
   const selectedAccount = accounts.find((a) => a.id === selectedAccountId);
 
