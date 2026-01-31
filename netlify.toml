@@ -18,3 +18,5 @@
 
 [functions]
   node_bundler = "esbuild"
+  external_node_modules = ["axios", "dayjs"]
+  included_files = ["netlify/functions/**"]
