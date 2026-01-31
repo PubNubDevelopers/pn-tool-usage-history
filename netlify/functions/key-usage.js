@@ -1,10 +1,9 @@
-import { Handler } from '@netlify/functions';
-import axios from 'axios';
-import dayjs from 'dayjs';
+const axios = require('axios');
+const dayjs = require('dayjs');
 
 const INTERNAL_ADMIN_URL = 'https://internal-admin.pubnub.com';
 
-export const handler: Handler = async (event) => {
+exports.handler = async (event) => {
   if (event.httpMethod !== 'GET') {
     return { statusCode: 405, body: 'Method Not Allowed' };
   }
@@ -14,6 +13,7 @@ export const handler: Handler = async (event) => {
   if (!token) {
     return {
       statusCode: 400,
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ error: 'Missing token' }),
     };
   }
@@ -21,7 +21,7 @@ export const handler: Handler = async (event) => {
   const startDate = start || dayjs().subtract(3, 'month').format('YYYY-MM-DD');
   const endDate = end || dayjs().format('YYYY-MM-DD');
 
-  let usageUrl: string;
+  let usageUrl;
 
   if (keyid) {
     usageUrl = `${INTERNAL_ADMIN_URL}/api/v4/services/usage/legacy/usage?key_id=${keyid}&usageType=transaction&file_format=json&start=${startDate}&end=${endDate}`;
@@ -32,6 +32,7 @@ export const handler: Handler = async (event) => {
   } else {
     return {
       statusCode: 400,
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ error: 'Missing keyid, appid, or accountid' }),
     };
   }
@@ -46,7 +47,7 @@ export const handler: Handler = async (event) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(response.data),
     };
-  } catch (error: any) {
+  } catch (error) {
     console.error('Usage error:', error.response?.data || error.message);
     return {
       statusCode: error.response?.status || 500,

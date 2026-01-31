@@ -1,43 +1,43 @@
-import { Handler } from '@netlify/functions';
-import axios from 'axios';
+const axios = require('axios');
 
 const INTERNAL_ADMIN_URL = 'https://internal-admin.pubnub.com';
 
-export const handler: Handler = async (event) => {
+exports.handler = async (event) => {
   if (event.httpMethod !== 'GET') {
     return { statusCode: 405, body: 'Method Not Allowed' };
   }
 
-  const { appid, token } = event.queryStringParameters || {};
+  const { ownerid, token } = event.queryStringParameters || {};
 
-  if (!appid || !token) {
+  if (!ownerid || !token) {
     return {
       statusCode: 400,
-      body: JSON.stringify({ error: 'Missing appid or token' }),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ error: 'Missing ownerid or token' }),
     };
   }
 
   try {
     const response = await axios.get(
-      `${INTERNAL_ADMIN_URL}/api/app/keys`,
+      `${INTERNAL_ADMIN_URL}/api/apps-simplified`,
       {
         headers: { 'X-Session-Token': token },
-        params: { app_id: appid, page: 1, limit: 99 },
+        params: { owner_id: ownerid, limit: 100, search: '' },
       }
     );
 
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(response.data.result || response.data || []),
+      body: JSON.stringify(response.data),
     };
-  } catch (error: any) {
-    console.error('Keys error:', error.response?.data || error.message);
+  } catch (error) {
+    console.error('Apps error:', error.response?.data || error.message);
     return {
       statusCode: error.response?.status || 500,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        error: 'Failed to fetch keys',
+        error: 'Failed to fetch apps',
         details: error.response?.data || error.message,
       }),
     };

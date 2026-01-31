@@ -1,9 +1,8 @@
-import { Handler } from '@netlify/functions';
-import axios from 'axios';
+const axios = require('axios');
 
 const INTERNAL_ADMIN_URL = 'https://internal-admin.pubnub.com';
 
-export const handler: Handler = async (event) => {
+exports.handler = async (event) => {
   if (event.httpMethod !== 'GET') {
     return { statusCode: 405, body: 'Method Not Allowed' };
   }
@@ -13,6 +12,7 @@ export const handler: Handler = async (event) => {
   if (!username || !password) {
     return {
       statusCode: 400,
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ error: 'Missing username or password' }),
     };
   }
@@ -40,7 +40,7 @@ export const handler: Handler = async (event) => {
         accounts: accountsResponse.data,
       }),
     };
-  } catch (error: any) {
+  } catch (error) {
     console.error('Login error:', error.response?.data || error.message);
     return {
       statusCode: error.response?.status || 500,
