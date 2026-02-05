@@ -15,6 +15,7 @@ interface AuthContextType {
   searchAccounts: (email: string) => Promise<void>;
   clearSearchResults: () => void;
   selectedAccountId: number | null;
+  selectedAccount: Account | null;
   setSelectedAccountId: (id: number | null) => void;
 
   // Apps
@@ -149,7 +150,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAppsCache(new Map());
     setKeysCache(new Map());
     setUsageCache(new Map());
-    console.log('All caches cleared on logout');
   }, []);
 
   const searchAccountsFunc = useCallback(async (email: string) => {
@@ -174,6 +174,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const setSelectedAccountId = useCallback((id: number | null) => {
     const previousAccountId = selectedAccountId;
     setSelectedAccountIdState(id);
+    
+    // When selecting an account, add it to the accounts list if it's from search results
+    if (id !== null) {
+      const accountToAdd = searchResults.find(acc => acc.id === id);
+      if (accountToAdd && !accounts.some(acc => acc.id === id)) {
+        setAccounts(prev => [...prev, accountToAdd]);
+      }
+    }
+    
     setApps([]);
     setKeys([]);
     setSelectedAppIdState(null);
@@ -182,12 +191,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Clear cache when changing accounts or clearing selection
     if (id === null || (previousAccountId !== null && previousAccountId !== id)) {
-      console.log('Clearing cache due to account change:', { from: previousAccountId, to: id });
       setAppsCache(new Map());
       setKeysCache(new Map());
       setUsageCache(new Map());
     }
-  }, [selectedAccountId]);
+  }, [selectedAccountId, searchResults, accounts]);
 
   const fetchApps = useCallback(async (accountId: number) => {
     if (!sessionRef.current?.token) return;
@@ -195,19 +203,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Check cache first using ref
     const cached = appsCacheRef.current.get(accountId);
     if (cached) {
-      console.log('Using cached apps for account:', accountId);
       setApps(cached);
       return;
     }
     
     setIsLoading(true);
     setError(null);
-    console.log('fetchApps called for account:', accountId);
     try {
       const data = await api.getApps(accountId, sessionRef.current.token);
-      console.log('Apps response:', data);
       const appsList = data.result || [];
-      console.log('Setting apps:', appsList.length, 'apps');
       setApps(appsList);
       
       // Store in cache
@@ -217,7 +221,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return newCache;
       });
     } catch (err: any) {
-      console.error('Failed to fetch apps:', err);
       setError(err.message || 'Failed to fetch apps');
       setApps([]);
     } finally {
@@ -237,7 +240,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Check cache first using ref
     const cached = keysCacheRef.current.get(appId);
     if (cached) {
-      console.log('Using cached keys for app:', appId);
       setKeys(cached);
       return;
     }
@@ -288,10 +290,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Remove old entries
       keysToDelete.forEach(key => newCache.delete(key));
       
-      if (keysToDelete.length > 0) {
-        console.log(`Cleared ${keysToDelete.length} old usage cache entries`);
-      }
-      
       return newCache;
     });
   }, []);
@@ -310,7 +308,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Manual cache clear function
   const clearUsageCache = useCallback(() => {
     setUsageCache(new Map());
-    console.log('Usage cache cleared manually');
   }, []);
 
   // Fetch usage for a specific key with caching
@@ -330,12 +327,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Check cache first using ref
     const cached = usageCacheRef.current.get(cacheKey);
     if (cached) {
-      console.log('Using cached usage data for key:', keyId);
       return cached.data;
     }
     
     // Fetch from API
-    console.log('Fetching usage data for key:', keyId);
     const data = await api.getUsage({
       token: sessionRef.current.token,
       accountId: selectedAccountId,
@@ -387,7 +382,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Check cache first using ref
     const cached = usageCacheRef.current.get(cacheKey);
     if (cached) {
-      console.log('Using cached usage data for:', cacheKey);
       setUsage(cached.data);
       return;
     }
@@ -434,6 +428,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         searchAccounts: searchAccountsFunc,
         clearSearchResults,
         selectedAccountId,
+        selectedAccount: selectedAccountId
+          ? [...accounts, ...searchResults].find(acc => acc.id === selectedAccountId) || null
+          : null,
         setSelectedAccountId,
         apps,
         selectedAppId,

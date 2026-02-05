@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Building2, FolderOpen, Key, LogOut, Loader2, Search, X, BarChart3, TrendingUp, ArrowDownWideNarrow, SortAsc, Lightbulb, CheckSquare } from 'lucide-react';
+import { Building2, FolderOpen, Key, LogOut, Loader2, Search, X, BarChart3, TrendingUp, ArrowDownWideNarrow, SortAsc, CheckSquare } from 'lucide-react';
 import { formatNumber, getTimeRangeLabel, calculateUsageTotals } from '../../utils/metrics';
 import { UsageData } from '../../types';
 
@@ -232,17 +232,6 @@ export default function Sidebar() {
           >
             <BarChart3 className="w-4 h-4" />
             <span className="text-sm font-medium">Detailed View</span>
-          </button>
-          <button
-            onClick={() => navigate('/insights')}
-            className={`w-full flex items-center gap-3 px-3 py-2 rounded transition-colors ${
-              location.pathname === '/insights'
-                ? 'bg-pn-blue text-white'
-                : 'text-pn-text-secondary hover:bg-pn-surface-light hover:text-white'
-            }`}
-          >
-            <Lightbulb className="w-4 h-4" />
-            <span className="text-sm font-medium">Insights</span>
           </button>
           <button
             onClick={() => navigate('/features')}

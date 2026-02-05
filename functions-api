@@ -1,0 +1,2701 @@
+openapi: 3.1.1
+info:
+  title: FaaS API
+  description: Pubnub - Function As A Service API
+  version: '1.1'
+servers:
+- url: https://admin.pubnub.com:443/api/faas
+security:
+- SessionTokenAuth: [ ]
+tags:
+- name: 'Catalog'
+- name: 'Package'
+- name: 'Package-revisions'
+- name: 'Function-revisions'
+- name: 'Package-deployments'
+- name: 'KV storage'
+- name: 'Secrets storage'
+- name: 'Scheduled events'
+- name: 'Limits'
+paths:
+  /v1/package-blueprints:
+    get:
+      tags:
+      - Catalog
+      operationId: packageBlueprintGetAll
+      parameters:
+      - $ref: '#/components/parameters/QueryParamPageablePageNumber'
+      - $ref: '#/components/parameters/QueryParamPageablePageSize'
+      - $ref: '#/components/parameters/QueryParamPageableSort'
+      - $ref: '#/components/parameters/QueryParamTagNames'
+      - $ref: '#/components/parameters/QueryParamTagIds'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ 'data', 'meta', 'errors' ]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PackageBlueprintDTO'
+                  meta:
+                    $ref: '#/components/schemas/MetaPagedDTO'
+                  errors:
+                    $ref: '#/components/schemas/NoErrorsArray'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  /v1/package-blueprints/{packageBlueprintId}:
+    get:
+      tags:
+      - Catalog
+      operationId: packageBlueprintGet
+      parameters:
+      - $ref: '#/components/parameters/PathParamPackageBlueprintId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ 'data', 'meta', 'errors' ]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PackageBlueprintDTO'
+                  meta:
+                    $ref: '#/components/schemas/MetaDTO'
+                  errors:
+                    $ref: '#/components/schemas/NoErrorsArray'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  /v1/package-blueprints/{packageBlueprintId}/function-blueprints:
+    get:
+      tags:
+      - Catalog
+      operationId: packageBlueprintGetFunctionBlueprints
+      parameters:
+      - $ref: '#/components/parameters/PathParamPackageBlueprintId'
+      - name: detailed
+        in: query
+        required: false
+        schema:
+          type: boolean
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ 'data', 'meta', 'errors' ]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FunctionBlueprintDTO'
+                  meta:
+                    $ref: '#/components/schemas/MetaPagedDTO'
+                  errors:
+                    $ref: '#/components/schemas/NoErrorsArray'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  /v1/function-blueprints/{functionBlueprintId}/function-blueprint-params:
+    get:
+      tags:
+      - Catalog
+      operationId: functionBlueprintGetParams
+      parameters:
+      - $ref: '#/components/parameters/PathParamFunctionBlueprintId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ 'data', 'meta', 'errors' ]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FunctionBlueprintParamDTO'
+                  meta:
+                    $ref: '#/components/schemas/MetaPagedDTO'
+                  errors:
+                    $ref: '#/components/schemas/NoErrorsArray'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  /v1/packages:
+    get:
+      tags:
+      - Package
+      operationId: packageGetAll
+      parameters:
+      - $ref: '#/components/parameters/QueryParamPageablePageNumber'
+      - $ref: '#/components/parameters/QueryParamPageablePageSize'
+      - $ref: '#/components/parameters/QueryParamPageableSort'
+      - $ref: '#/components/parameters/QueryParamSearch'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ 'data', 'meta', 'errors' ]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PackageDTO'
+                  meta:
+                    $ref: '#/components/schemas/MetaPagedDTO'
+                  errors:
+                    $ref: '#/components/schemas/NoErrorsArray'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+    post:
+      tags:
+      - Package
+      operationId: packageCreate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PackageCreateRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ 'data', 'meta', 'errors' ]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PackageDTO'
+                  meta:
+                    $ref: '#/components/schemas/MetaDTO'
+                  errors:
+                    $ref: '#/components/schemas/NoErrorsArray'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  /v1/package-blueprints/{packageBlueprintId}/packages:
+    post:
+      tags:
+      - Package
+      description: 'Create package based on package-blueprint from catalog'
+      operationId: packageCreateFromBlueprint
+      parameters:
+      - $ref: '#/components/parameters/PathParamPackageBlueprintId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PackageImportFromBlueprintRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ 'data', 'meta', 'errors' ]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PackageDTO'
+                  meta:
+                    $ref: '#/components/schemas/MetaDTO'
+                  errors:
+                    $ref: '#/components/schemas/NoErrorsArray'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  /v1/packages/{packageId}:
+    get:
+      tags:
+      - Package
+      operationId: packageGet
+      parameters:
+      - $ref: '#/components/parameters/PathParamPackageId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ 'data', 'meta', 'errors' ]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PackageDTO'
+                  meta:
+                    $ref: '#/components/schemas/MetaDTO'
+                  errors:
+                    $ref: '#/components/schemas/NoErrorsArray'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+    put:
+      tags:
+      - Package
+      operationId: packageUpdate
+      parameters:
+      - $ref: '#/components/parameters/PathParamPackageId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PackageUpdateRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ 'data', 'meta', 'errors' ]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PackageDTO'
+                  meta:
+                    $ref: '#/components/schemas/MetaDTO'
+                  errors:
+                    $ref: '#/components/schemas/NoErrorsArray'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+    delete:
+      tags:
+      - Package
+      operationId: packageDelete
+      parameters:
+      - $ref: '#/components/parameters/PathParamPackageId'
+      responses:
+        '200':
+          $ref: '#/components/responses/DefaultDeleteResponse'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  /v1/packages/{packageId}/package-revisions:
+    get:
+      tags:
+      - Package
+      operationId: packageGetRevisions
+      parameters:
+      - $ref: '#/components/parameters/PathParamPackageId'
+      - $ref: '#/components/parameters/QueryParamOptionalKeysetId'
+      - $ref: '#/components/parameters/QueryParamPageablePageNumber'
+      - $ref: '#/components/parameters/QueryParamPageablePageSize'
+      - $ref: '#/components/parameters/QueryParamPageableSort'
+      - $ref: '#/components/parameters/QueryParamSearch'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ 'data', 'meta', 'errors' ]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PackageRevisionDTO'
+                  meta:
+                    $ref: '#/components/schemas/MetaPagedDTO'
+                  errors:
+                    $ref: '#/components/schemas/NoErrorsArray'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  /v1/package-revisions:
+    post:
+      tags:
+      - 'Package-revisions'
+      operationId: packageRevisionCreate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PackageRevisionCreateRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ 'data', 'meta', 'errors' ]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PackageRevisionDTO'
+                  meta:
+                    $ref: '#/components/schemas/MetaDTO'
+                  errors:
+                    $ref: '#/components/schemas/NoErrorsArray'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  /v1/package-revisions/{packageRevisionId}:
+    get:
+      tags:
+      - 'Package-revisions'
+      operationId: packageRevisionGet
+      parameters:
+      - $ref: '#/components/parameters/PathParamPackageRevisionId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ 'data', 'meta', 'errors' ]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PackageRevisionDTO'
+                  meta:
+                    $ref: '#/components/schemas/MetaDTO'
+                  errors:
+                    $ref: '#/components/schemas/NoErrorsArray'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+    put:
+      tags:
+      - 'Package-revisions'
+      operationId: packageRevisionUpdate
+      parameters:
+      - $ref: '#/components/parameters/PathParamPackageRevisionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PackageRevisionUpdateRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ 'data', 'meta', 'errors' ]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PackageRevisionDTO'
+                  meta:
+                    $ref: '#/components/schemas/MetaDTO'
+                  errors:
+                    $ref: '#/components/schemas/NoErrorsArray'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+    delete:
+      tags:
+      - 'Package-revisions'
+      operationId: packageRevisionDelete
+      parameters:
+      - $ref: '#/components/parameters/PathParamPackageRevisionId'
+      responses:
+        '200':
+          $ref: '#/components/responses/DefaultDeleteResponse'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  /v1/package-revisions/{packageRevisionId}/functions:
+    get:
+      tags:
+      - 'Package-revisions'
+      operationId: packageRevisionGetFunctions
+      parameters:
+      - $ref: '#/components/parameters/PathParamPackageRevisionId'
+      - $ref: '#/components/parameters/QueryParamPageablePageNumber'
+      - $ref: '#/components/parameters/QueryParamPageablePageSize'
+      - $ref: '#/components/parameters/QueryParamPageableSort'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ 'data', 'meta', 'errors' ]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FunctionDTO'
+                  meta:
+                    $ref: '#/components/schemas/MetaPagedDTO'
+                  errors:
+                    $ref: '#/components/schemas/NoErrorsArray'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  /v1/package-revisions/{packageRevisionId}/package-deployments:
+    get:
+      tags:
+      - 'Package-revisions'
+      operationId: packageRevisionGetDeployments
+      parameters:
+      - $ref: '#/components/parameters/PathParamPackageRevisionId'
+      - $ref: '#/components/parameters/QueryParamOptionalKeysetId'
+      - $ref: '#/components/parameters/QueryParamPackageDeploymentState'
+      - $ref: '#/components/parameters/QueryParamPageablePageNumber'
+      - $ref: '#/components/parameters/QueryParamPageablePageSize'
+      - $ref: '#/components/parameters/QueryParamPageableSort'
+      - $ref: '#/components/parameters/QueryParamSearch'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ 'data', 'meta', 'errors' ]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PackageDeploymentDTO'
+                  meta:
+                    $ref: '#/components/schemas/MetaPagedDTO'
+                  errors:
+                    $ref: '#/components/schemas/NoErrorsArray'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  /v1/function-revisions/{functionRevisionId}/test-inputs:
+    get:
+      tags:
+      - 'Function-revisions'
+      operationId: functionRevisionGetTestInputs
+      parameters:
+      - $ref: '#/components/parameters/PathParamFunctionRevisionId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ 'data', 'meta', 'errors' ]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FunctionTestInputDTO'
+                  meta:
+                    $ref: '#/components/schemas/MetaPagedDTO'
+                  errors:
+                    $ref: '#/components/schemas/NoErrorsArray'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  /v1/function-revisions/{functionRevisionId}/test-inputs/{functionTestInputId}:
+    put:
+      tags:
+      - 'Function-revisions'
+      operationId: functionRevisionTestInputUpdate
+      parameters:
+      - $ref: '#/components/parameters/PathParamFunctionRevisionId'
+      - $ref: '#/components/parameters/PathParamFunctionTestInputId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FunctionRevisionTestInputCreateUpdateRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ 'data', 'meta', 'errors' ]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/FunctionTestInputDTO'
+                  meta:
+                    $ref: '#/components/schemas/MetaDTO'
+                  errors:
+                    $ref: '#/components/schemas/NoErrorsArray'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  /v1/package-deployments:
+    post:
+      tags:
+      - 'Package-deployments'
+      operationId: packageRevisionAssignToKeyset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PackageDeploymentCreateRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ 'data', 'meta', 'errors' ]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PackageDeploymentDTO'
+                  meta:
+                    $ref: '#/components/schemas/MetaDTO'
+                  errors:
+                    $ref: '#/components/schemas/NoErrorsArray'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  /v1/package-deployments/{packageDeploymentId}:
+    get:
+      tags:
+      - 'Package-deployments'
+      operationId: packageDeploymentGet
+      parameters:
+      - $ref: '#/components/parameters/PathParamPackageDeploymentId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ 'data', 'meta', 'errors' ]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PackageDeploymentDTO'
+                  meta:
+                    $ref: '#/components/schemas/MetaDTO'
+                  errors:
+                    $ref: '#/components/schemas/NoErrorsArray'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+    delete:
+      tags:
+      - 'Package-deployments'
+      operationId: packageDeploymentDelete
+      parameters:
+      - $ref: '#/components/parameters/PathParamPackageDeploymentId'
+      responses:
+        '200':
+          $ref: '#/components/responses/DefaultDeleteResponse'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  /v1/package-deployments/{packageDeploymentId}/function-deployments:
+    post:
+      tags:
+      - 'Package-deployments'
+      description: "Starting the package-deployment (or restarting if it's in a RUNNING state)"
+      operationId: packageDeploymentStartOrRestart
+      parameters:
+      - $ref: '#/components/parameters/PathParamPackageDeploymentId'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ 'data', 'meta', 'errors' ]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PackageDeploymentDTO'
+                  meta:
+                    $ref: '#/components/schemas/MetaDTO'
+                  errors:
+                    $ref: '#/components/schemas/NoErrorsArray'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+    delete:
+      tags:
+      - 'Package-deployments'
+      operationId: packageDeploymentStop
+      parameters:
+      - $ref: '#/components/parameters/PathParamPackageDeploymentId'
+      - name: force
+        in: query
+        required: false
+        schema:
+          type: boolean
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ 'data', 'meta', 'errors' ]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PackageDeploymentDTO'
+                  meta:
+                    $ref: '#/components/schemas/MetaDTO'
+                  errors:
+                    $ref: '#/components/schemas/NoErrorsArray'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+    put:
+      tags:
+      - 'Package-deployments'
+      operationId: packageDeploymentRollingUpdate
+      parameters:
+      - $ref: '#/components/parameters/PathParamPackageDeploymentId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PackageDeploymentRollingUpdateRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ 'data', 'meta', 'errors' ]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PackageDeploymentDTO'
+                  meta:
+                    $ref: '#/components/schemas/MetaDTO'
+                  errors:
+                    $ref: '#/components/schemas/NoErrorsArray'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  /v1/package-deployments/intersected:
+    get:
+      tags:
+      - 'Package-deployments'
+      operationId: getIntersectedPackageDeployments
+      description: Retrieves RUNNING package-deployments that have functions intersecting with the specified channels. FunctionType is optional and can be used to filter by specific function types.
+      parameters:
+      - $ref: '#/components/parameters/QueryParamRequiredKeysetId'
+      - $ref: '#/components/parameters/QueryParamRequiredChannelsArray'
+      - $ref: '#/components/parameters/QueryParamOptionalFunctionType'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ 'data', 'meta', 'errors' ]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/IntersectedPackageDeploymentsDTO'
+                  meta:
+                    $ref: '#/components/schemas/MetaDTO'
+                  errors:
+                    $ref: '#/components/schemas/NoErrorsArray'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  /v1/function-deployments:
+    delete:
+      tags:
+      - 'Package-deployments'
+      description: 'Stop all package-deployments of the package or package-revision'
+      operationId: packageDeploymentsStop
+      parameters:
+      - $ref: '#/components/parameters/QueryParamPackageId'
+      - $ref: '#/components/parameters/QueryParamPackageRevisionId'
+      - name: force
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ 'data', 'meta', 'errors' ]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PackageDeploymentDTO'
+                  meta:
+                    $ref: '#/components/schemas/MetaPagedDTO'
+                  errors:
+                    $ref: '#/components/schemas/NoErrorsArray'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  /v1/kv/strings:
+    get:
+      tags:
+      - 'KV storage'
+      operationId: stringsGetAll
+      parameters:
+      - $ref: '#/components/parameters/QueryParamSubkey'
+      - $ref: '#/components/parameters/QueryParamKVPageSize'
+      - $ref: '#/components/parameters/QueryParamKVPageToken'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ 'data', 'meta', 'errors' ]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/KeyValueDTO'
+                  meta:
+                    $ref: '#/components/schemas/MetaTokenPagedDTO'
+                  errors:
+                    $ref: '#/components/schemas/NoErrorsArray'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  /v1/kv/strings/{key}:
+    get:
+      tags:
+      - 'KV storage'
+      operationId: stringGet
+      parameters:
+      - $ref: '#/components/parameters/PathParamKVStorageKey'
+      - $ref: '#/components/parameters/QueryParamSubkey'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ 'data', 'meta', 'errors' ]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/KeyValueDTO'
+                  meta:
+                    $ref: '#/components/schemas/MetaDTO'
+                  errors:
+                    $ref: '#/components/schemas/NoErrorsArray'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+    put:
+      tags:
+      - 'KV storage'
+      operationId: stringUpsert
+      parameters:
+      - $ref: '#/components/parameters/PathParamKVStorageKey'
+      - $ref: '#/components/parameters/QueryParamSubkey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StringUpsertRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ 'data', 'meta', 'errors' ]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/KeyValueDTO'
+                  meta:
+                    $ref: '#/components/schemas/MetaDTO'
+                  errors:
+                    $ref: '#/components/schemas/NoErrorsArray'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+    delete:
+      tags:
+      - 'KV storage'
+      operationId: stringDelete
+      parameters:
+      - $ref: '#/components/parameters/PathParamKVStorageKey'
+      - $ref: '#/components/parameters/QueryParamSubkey'
+      responses:
+        '200':
+          $ref: '#/components/responses/DefaultDeleteResponse'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  /v1/kv/jsons:
+    get:
+      tags:
+      - 'KV storage'
+      operationId: jsonsGetAll
+      parameters:
+      - $ref: '#/components/parameters/QueryParamSubkey'
+      - $ref: '#/components/parameters/QueryParamKVPageSize'
+      - $ref: '#/components/parameters/QueryParamKVPageToken'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ 'data', 'meta', 'errors' ]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/KeyValueDTO'
+                  meta:
+                    $ref: '#/components/schemas/MetaTokenPagedDTO'
+                  errors:
+                    $ref: '#/components/schemas/NoErrorsArray'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  /v1/kv/jsons/{key}:
+    get:
+      tags:
+      - 'KV storage'
+      operationId: jsonGet
+      parameters:
+      - $ref: '#/components/parameters/PathParamKVStorageKey'
+      - $ref: '#/components/parameters/QueryParamSubkey'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ 'data', 'meta', 'errors' ]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/KeyValueDTO'
+                  meta:
+                    $ref: '#/components/schemas/MetaDTO'
+                  errors:
+                    $ref: '#/components/schemas/NoErrorsArray'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+    put:
+      tags:
+      - 'KV storage'
+      operationId: jsonUpsert
+      parameters:
+      - $ref: '#/components/parameters/PathParamKVStorageKey'
+      - $ref: '#/components/parameters/QueryParamSubkey'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JsonUpsertRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ 'data', 'meta', 'errors' ]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/KeyValueDTO'
+                  meta:
+                    $ref: '#/components/schemas/MetaDTO'
+                  errors:
+                    $ref: '#/components/schemas/NoErrorsArray'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+    delete:
+      tags:
+      - 'KV storage'
+      operationId: jsonDelete
+      parameters:
+      - $ref: '#/components/parameters/PathParamKVStorageKey'
+      - $ref: '#/components/parameters/QueryParamSubkey'
+      responses:
+        '200':
+          $ref: '#/components/responses/DefaultDeleteResponse'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  /v1/kv/counters:
+    get:
+      tags:
+      - 'KV storage'
+      operationId: countersGetAll
+      parameters:
+      - $ref: '#/components/parameters/QueryParamSubkey'
+      - $ref: '#/components/parameters/QueryParamKVPageSize'
+      - $ref: '#/components/parameters/QueryParamKVPageToken'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ 'data', 'meta', 'errors' ]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/KeyValueDTO'
+                  meta:
+                    $ref: '#/components/schemas/MetaTokenPagedDTO'
+                  errors:
+                    $ref: '#/components/schemas/NoErrorsArray'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  /v1/kv/counters/{key}:
+    get:
+      tags:
+      - 'KV storage'
+      operationId: counterGet
+      parameters:
+      - $ref: '#/components/parameters/PathParamKVStorageKey'
+      - $ref: '#/components/parameters/QueryParamSubkey'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ 'data', 'meta', 'errors' ]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/KeyValueDTO'
+                  meta:
+                    $ref: '#/components/schemas/MetaDTO'
+                  errors:
+                    $ref: '#/components/schemas/NoErrorsArray'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  /v1/kv/counters/{key}/increment:
+    post:
+      tags:
+      - 'KV storage'
+      operationId: counterIncrement
+      parameters:
+      - $ref: '#/components/parameters/PathParamKVStorageKey'
+      - $ref: '#/components/parameters/QueryParamSubkey'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CounterMutateRequest'
+      responses:
+        '200':
+          description: OK
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  /v1/kv/counters/{key}/decrement:
+    post:
+      tags:
+      - 'KV storage'
+      operationId: counterDecrement
+      parameters:
+      - $ref: '#/components/parameters/PathParamKVStorageKey'
+      - $ref: '#/components/parameters/QueryParamSubkey'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CounterMutateRequest'
+      responses:
+        '200':
+          description: OK
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  /v1/kv/secrets:
+    get:
+      tags:
+      - 'Secrets storage'
+      operationId: secretsGetAll
+      parameters:
+      - $ref: '#/components/parameters/QueryParamSubkey'
+      - $ref: '#/components/parameters/QueryParamKVPageSize'
+      - $ref: '#/components/parameters/QueryParamKVPageToken'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ 'data', 'meta', 'errors' ]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SecretDTO'
+                  meta:
+                    $ref: '#/components/schemas/MetaTokenPagedDTO'
+                  errors:
+                    $ref: '#/components/schemas/NoErrorsArray'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  /v1/kv/secrets/{key}:
+    put:
+      tags:
+      - 'Secrets storage'
+      operationId: secretUpsert
+      parameters:
+      - $ref: '#/components/parameters/PathParamKVStorageKey'
+      - $ref: '#/components/parameters/QueryParamSubkey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SecretUpsertRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ 'data', 'meta', 'errors' ]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/SecretDTO'
+                  meta:
+                    $ref: '#/components/schemas/MetaTokenPagedDTO'
+                  errors:
+                    $ref: '#/components/schemas/NoErrorsArray'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+    delete:
+      tags:
+      - 'Secrets storage'
+      operationId: secretDelete
+      parameters:
+      - $ref: '#/components/parameters/PathParamKVStorageKey'
+      - $ref: '#/components/parameters/QueryParamSubkey'
+      responses:
+        '200':
+          $ref: '#/components/responses/DefaultDeleteResponse'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  /v1/scheduled/events:
+    get:
+      tags:
+      - 'Scheduled events'
+      operationId: scheduledEventGetAll
+      parameters:
+      - $ref: '#/components/parameters/QueryParamPageablePageNumber'
+      - $ref: '#/components/parameters/QueryParamPageablePageSize'
+      - $ref: '#/components/parameters/QueryParamPageableSort'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ 'data', 'meta', 'errors' ]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ScheduledEventDTO'
+                  meta:
+                    $ref: '#/components/schemas/MetaPagedDTO'
+                  errors:
+                    $ref: '#/components/schemas/NoErrorsArray'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+    post:
+      tags:
+      - 'Scheduled events'
+      operationId: scheduledEventCreate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScheduledEventCreateRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ 'data', 'meta', 'errors' ]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ScheduledEventDTO'
+                  meta:
+                    $ref: '#/components/schemas/MetaDTO'
+                  errors:
+                    $ref: '#/components/schemas/NoErrorsArray'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  /v1/scheduled/events/{scheduledEventId}:
+    get:
+      tags:
+      - 'Scheduled events'
+      operationId: scheduledEventGet
+      parameters:
+      - $ref: '#/components/parameters/PathParamScheduledEventId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ 'data', 'meta', 'errors' ]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ScheduledEventDTO'
+                  meta:
+                    $ref: '#/components/schemas/MetaDTO'
+                  errors:
+                    $ref: '#/components/schemas/NoErrorsArray'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+    put:
+      tags:
+      - 'Scheduled events'
+      operationId: scheduledEventUpdate
+      parameters:
+      - $ref: '#/components/parameters/PathParamScheduledEventId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScheduledEventUpdateRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ 'data', 'meta', 'errors' ]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ScheduledEventDTO'
+                  meta:
+                    $ref: '#/components/schemas/MetaDTO'
+                  errors:
+                    $ref: '#/components/schemas/NoErrorsArray'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+    delete:
+      tags:
+      - 'Scheduled events'
+      operationId: scheduledEventDelete
+      parameters:
+      - $ref: '#/components/parameters/PathParamScheduledEventId'
+      responses:
+        '200':
+          $ref: '#/components/responses/DefaultDeleteResponse'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  /v1/limits/package-deployments-running:
+    get:
+      tags:
+      - Limits
+      operationId: getLimitPackageDeploymentsRunning
+      parameters:
+      - $ref: '#/components/parameters/QueryParamAccountId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ 'data', 'meta', 'errors' ]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/LimitDTO'
+                  meta:
+                    $ref: '#/components/schemas/MetaDTO'
+                  errors:
+                    $ref: '#/components/schemas/NoErrorsArray'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  /v1/limits/v2-enabled:
+    get:
+      tags:
+      - Limits
+      operationId: getLimitV2Enabled
+      parameters:
+      - $ref: '#/components/parameters/QueryParamAccountId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ 'data', 'meta', 'errors' ]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/LimitDTO'
+                  meta:
+                    $ref: '#/components/schemas/MetaDTO'
+                  errors:
+                    $ref: '#/components/schemas/NoErrorsArray'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+components:
+  securitySchemes:
+    SessionTokenAuth:
+      in: header
+      type: apiKey
+      name: X-Session-Token
+      description: The token received after logging in to the Portal-API in the form of a cookie named `__Host-PN-2-pnAdminToken`
+  responses:
+    DefaultErrorResponse:
+      description: Any other response-code indicates an error
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+            - meta
+            - errors
+            properties:
+              meta:
+                $ref: '#/components/schemas/MetaDTO'
+              errors:
+                type: array
+                minItems: 1
+                items:
+                  $ref: '#/components/schemas/ErrorDTO'
+    DefaultDeleteResponse:
+      description: The deletion operation was completed successfully
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+            - meta
+            - errors
+            properties:
+              meta:
+                $ref: '#/components/schemas/MetaDTO'
+              errors:
+                type: array
+                maxItems: 0
+                items:
+                  $ref: '#/components/schemas/ErrorDTO'
+                example: [ ]
+  schemas:
+    MetaDTO:
+      type: object
+      required:
+      - correlationId
+      - timestamp
+      properties:
+        correlationId:
+          type: string
+          example: '28683605291'
+        timestamp:
+          type: string
+          format: date-time
+    MetaPagedDTO:
+      type: object
+      required:
+      - correlationId
+      - timestamp
+      properties:
+        correlationId:
+          type: string
+          example: '28683605291'
+        timestamp:
+          type: string
+          format: date-time
+        paging:
+          type: object
+          required:
+          - totalElements
+          - totalPages
+          - pageSize
+          - pageNumber
+          - pageOffset
+          properties:
+            totalElements:
+              type: integer
+              format: int64
+              example: 100
+            totalPages:
+              type: integer
+              format: int64
+              example: 5
+            pageSize:
+              type: integer
+              default: 20
+              format: int64
+            pageNumber:
+              type: integer
+              default: 0
+              format: int64
+            pageOffset:
+              type: integer
+              default: 0
+              format: int64
+    MetaTokenPagedDTO:
+      type: object
+      required:
+      - correlationId
+      - timestamp
+      properties:
+        correlationId:
+          type: string
+          example: '28683605291'
+        timestamp:
+          type: string
+          format: date-time
+        paging:
+          type: object
+          required:
+          - pageSize
+          - pageToken
+          properties:
+            pageSize:
+              type: integer
+              format: int64
+              minimum: 1
+              maximum: 300
+              default: 100
+            pageToken:
+              type: string
+              minLength: 1
+              maxLength: 40
+              example: '0x000600046b657931f07ffffffef07ffffffe'
+    NoErrorsArray:
+      type: array
+      maxItems: 0
+      example: [ ]
+      items:
+        $ref: '#/components/schemas/ErrorDTO'
+    ErrorDTO:
+      type: object
+      required:
+      - code
+      - message
+      properties:
+        code:
+          type: string
+          example: 'FAAS-500'
+        message:
+          type: string
+          example: 'Internal Server Error!'
+    KeysetDTO:
+      required:
+      - id
+      - name
+      - pubkey
+      - subkey
+      - createdDttm
+      - updatedDttm
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        name:
+          type: string
+          example: 'Demo keyset'
+        subkey:
+          type: string
+          example: 'sub-c-b6860277-00f7-4b78-b73a-332f3e5d866e'
+        pubkey:
+          type: string
+          example: 'pub-c-2dcd4d61-19c3-43c6-9abe-e3de55cd03a2'
+        createdDttm:
+          type: string
+          format: date-time
+        updatedDttm:
+          type: string
+          format: date-time
+    PackageBlueprintDTO:
+      required:
+      - id
+      - documentation
+      - iconBase64
+      - iconMediaType
+      - name
+      - state
+      - tags
+      - version
+      - createdDttm
+      - updatedDttm
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        parentId:
+          type: string
+          format: uuid
+        name:
+          maxLength: 255
+          minLength: 0
+          type: string
+        version:
+          maxLength: 16
+          minLength: 0
+          type: string
+        description:
+          type: string
+        documentation:
+          $ref: '#/components/schemas/PackageBlueprintDocumentation'
+        iconBase64:
+          type: string
+        iconMediaType:
+          type: string
+        state:
+          type: string
+        tags:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/PackageBlueprintTagDTO'
+          example:
+          - 'CATALOG'
+        createdDttm:
+          type: string
+          format: date-time
+        updatedDttm:
+          type: string
+          format: date-time
+    PackageBlueprintDocumentation:
+      required:
+      - heading
+      - description
+      - prerequisites
+      - input
+      - output
+      - links
+      type: object
+      properties:
+        heading:
+          type: string
+          example: 'HuggingFace Serverless API'
+        description:
+          type: string
+          example: '<p>Use any HuggingFace model for LLM chatbots, chat moderation, sentiment analysis and more!</li></ol>'
+        prerequisites:
+          type: array
+          items:
+            type: string
+          example:
+          - 'Create an account with HuggingFace'
+          - 'Grab the <code>HUGGINGFACE_API_KEY</code> from: https://huggingface.co/settings/tokens '
+          - 'Click New token button'
+        input:
+          type: array
+          items:
+            type: object
+            required:
+            - code
+            - description
+            properties:
+              code:
+                type: string
+                example: '{"text": "negative comment"}'
+              description:
+                type: string
+                example: 'Example message representing a chat comment that may be negative in nature.'
+        links:
+          type: object
+          required:
+          - apiDocs
+          - homepage
+          - loginAndSignup
+          properties:
+            apiDocs:
+              type: string
+              example: 'https://huggingface.co/docs'
+            homepage:
+              type: string
+              example: 'https://huggingface.co/'
+            loginAndSignup:
+              type: string
+              example: 'https://huggingface.co/join'
+        output:
+          type: array
+          items:
+            type: object
+            required:
+            - code
+            - description
+            properties:
+              code:
+                type: string
+                example: '{"text": "positive comment"}'
+              description:
+                type: string
+                example: 'The original message was replaced based on instruction to convert a negative comment into a positive comment.'
+    PackageBlueprintTagDTO:
+      required:
+      - createdDttm
+      - id
+      - name
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          maxLength: 255
+          minLength: 0
+          type: string
+        createdDttm:
+          type: string
+          format: date-time
+        updatedDttm:
+          type: string
+          format: date-time
+    FunctionBlueprintDTO:
+      required:
+      - code
+      - config
+      - createdDttm
+      - id
+      - language
+      - name
+      - packageBlueprintId
+      - sortOrder
+      - type
+      type: object
+      properties:
+        id:
+          type: string
+        packageBlueprintId:
+          type: string
+        name:
+          maxLength: 255
+          minLength: 0
+          type: string
+        type:
+          $ref: '#/components/schemas/FunctionTypeEnum'
+        language:
+          type: string
+          enum:
+          - JAVASCRIPT
+        code:
+          maxLength: 85000
+          minLength: 1
+          type: string
+        params:
+          type: array
+          items:
+            $ref: '#/components/schemas/FunctionBlueprintParamDTO'
+        testInputs:
+          type: array
+          items:
+            $ref: '#/components/schemas/FunctionBlueprintTestInputDTO'
+        config:
+          oneOf:
+          - $ref: '#/components/schemas/ChannelBasedFunctionConfig'
+          - $ref: '#/components/schemas/OnIntervalFunctionConfig'
+          - $ref: '#/components/schemas/OnIntervalWithSubscriptionFunctionConfig'
+          - $ref: '#/components/schemas/RestFunctionConfig'
+        sortOrder:
+          type: integer
+          format: int32
+        createdDttm:
+          type: string
+          format: date-time
+        updatedDttm:
+          type: string
+          format: date-time
+    FunctionBlueprintParamDTO:
+      required:
+      - createdDttm
+      - id
+      - name
+      - sourceName
+      - storage
+      - type
+      - valueType
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          maxLength: 255
+          minLength: 0
+          type: string
+        sourceName:
+          maxLength: 64
+          minLength: 0
+          type: string
+        type:
+          type: string
+          enum:
+          - CORE
+          - CUSTOM
+        valueType:
+          type: string
+          enum:
+          - STRING
+          - URL
+          - CHANNEL_NAME
+        storage:
+          type: string
+          enum:
+          - SOURCE_CODE
+          - VAULT
+          - KV
+        description:
+          type: string
+        defaultValue:
+          type: string
+        createdDttm:
+          type: string
+          format: date-time
+        updatedDttm:
+          type: string
+          format: date-time
+    FunctionBlueprintTestInputDTO:
+      required:
+      - createdDttm
+      - functionBlueprintId
+      - id
+      - mimeType
+      - name
+      - payload
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        functionBlueprintId:
+          type: string
+          format: uuid
+        name:
+          maxLength: 255
+          minLength: 0
+          type: string
+        payload:
+          maxLength: 16384
+          minLength: 0
+          type: string
+        mimeType:
+          maxLength: 64
+          minLength: 0
+          type: string
+        description:
+          maxLength: 255
+          minLength: 0
+          type: string
+        createdDttm:
+          type: string
+          format: date-time
+        updatedDttm:
+          type: string
+          format: date-time
+    PackageImportFromBlueprintRequest:
+      required:
+      - apiManaged
+      - keysetId
+      - revisionName
+      type: object
+      properties:
+        keysetId:
+          minimum: 0
+          type: integer
+          format: int32
+        name:
+          type: string
+        description:
+          type: string
+        apiManaged:
+          type: boolean
+        tags:
+          type: array
+          items:
+            type: string
+            format: uuid
+        revisionName:
+          type: string
+        revisionDescription:
+          type: string
+        functions:
+          type: array
+          items:
+            $ref: '#/components/schemas/FunctionImportRequest'
+    PackageDTO:
+      required:
+      - id
+      - name
+      - tags
+      - apiManaged
+      - revisionsTotal
+      - revisionsRunning
+      - packageDeploymentsTotal
+      - packageDeploymentsRunning
+      - createdDttm
+      - updatedDttm
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        packageBlueprintId:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: 'Chat Message Profanity Filter'
+        description:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: 'Filters out profanity in chat messages'
+        apiManaged:
+          type: boolean
+          default: false
+        tags:
+          type: array
+          example: [ 'CUSTOM' ]
+          items:
+            type: string
+        revisionsTotal:
+          minimum: 1
+          example: 1
+          type: integer
+          format: int32
+        revisionsRunning:
+          minimum: 0
+          example: 1
+          type: integer
+          format: int32
+        packageDeploymentsTotal:
+          minimum: 0
+          example: 2
+          type: integer
+          format: int32
+        packageDeploymentsRunning:
+          minimum: 0
+          example: 2
+          type: integer
+          format: int32
+        createdDttm:
+          type: string
+          format: date-time
+        updatedDttm:
+          type: string
+          format: date-time
+    PackageCreateRequest:
+      required:
+      - apiManaged
+      - functions
+      - name
+      - revisionName
+      - tags
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        apiManaged:
+          type: boolean
+        tags:
+          type: array
+          items:
+            pattern: '[a-z_][a-z_0-9]{0,63}'
+            type: string
+        revisionName:
+          type: string
+        revisionDescription:
+          type: string
+        functions:
+          type: array
+          items:
+            $ref: '#/components/schemas/FunctionCreateRequest'
+    FunctionCreateRequest:
+      required:
+      - code
+      - config
+      - language
+      - name
+      - sortOrder
+      - testInputs
+      - type
+      type: object
+      properties:
+        name:
+          type: string
+        language:
+          type: string
+          enum:
+          - JAVASCRIPT
+        code:
+          type: string
+        type:
+          $ref: '#/components/schemas/FunctionTypeEnum'
+        config:
+          oneOf:
+          - $ref: '#/components/schemas/ChannelBasedFunctionConfig'
+          - $ref: '#/components/schemas/OnIntervalFunctionConfig'
+          - $ref: '#/components/schemas/OnIntervalWithSubscriptionFunctionConfig'
+          - $ref: '#/components/schemas/RestFunctionConfig'
+        sortOrder:
+          maximum: 32767
+          minimum: 0
+          type: integer
+          format: int32
+        testInputs:
+          type: array
+          items:
+            $ref: '#/components/schemas/FunctionRevisionTestInputCreateUpdateRequest'
+    FunctionCreateOrUpdateRequest:
+      required:
+      - code
+      - config
+      - name
+      - sortOrder
+      - testInputs
+      - type
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        language:
+          type: string
+          enum:
+          - JAVASCRIPT
+        code:
+          type: string
+        type:
+          $ref: '#/components/schemas/FunctionTypeEnum'
+        config:
+          oneOf:
+          - $ref: '#/components/schemas/ChannelBasedFunctionConfig'
+          - $ref: '#/components/schemas/OnIntervalFunctionConfig'
+          - $ref: '#/components/schemas/OnIntervalWithSubscriptionFunctionConfig'
+          - $ref: '#/components/schemas/RestFunctionConfig'
+        sortOrder:
+          maximum: 32767
+          minimum: 0
+          type: integer
+          format: int32
+        testInputs:
+          type: array
+          items:
+            $ref: '#/components/schemas/FunctionRevisionTestInputCreateUpdateRequest'
+    ChannelBasedFunctionConfig:
+      title: Channel-Based Function
+      required:
+      - inputChannel
+      - outputChannel
+      - type
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/FunctionTypeEnum'
+        inputChannel:
+          type: string
+        outputChannel:
+          type: string
+    FunctionDTO:
+      required:
+      - code
+      - config
+      - createdDttm
+      - functionRevisionId
+      - id
+      - language
+      - name
+      - packageRevisionId
+      - sortOrder
+      - type
+      type: object
+      properties:
+        id:
+          type: string
+        functionRevisionId:
+          type: string
+        packageRevisionId:
+          type: string
+        name:
+          maxLength: 255
+          minLength: 0
+          type: string
+        language:
+          type: string
+          enum:
+          - JAVASCRIPT
+        type:
+          $ref: '#/components/schemas/FunctionTypeEnum'
+        sortOrder:
+          type: integer
+          format: int32
+        code:
+          maxLength: 85000
+          minLength: 1
+          type: string
+        config:
+          oneOf:
+          - $ref: '#/components/schemas/ChannelBasedFunctionConfig'
+          - $ref: '#/components/schemas/OnIntervalFunctionConfig'
+          - $ref: '#/components/schemas/OnIntervalWithSubscriptionFunctionConfig'
+          - $ref: '#/components/schemas/RestFunctionConfig'
+        createdDttm:
+          type: string
+          format: date-time
+        updatedDttm:
+          type: string
+          format: date-time
+    FunctionTypeEnum:
+      type: string
+      enum:
+      - BEFORE_PUBLISH
+      - BEFORE_PUBLISH_FILE
+      - BEFORE_SIGNAL
+      - AFTER_PUBLISH
+      - AFTER_PUBLISH_FILE
+      - AFTER_PRESENCE
+      - AFTER_SIGNAL
+      - ON_INTERVAL
+      - ON_INTERVAL_WITH_SUBSCRIPTION
+      - ON_REST
+    Config:
+      required:
+      - type
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/FunctionTypeEnum'
+      discriminator:
+        propertyName: type
+    OnIntervalFunctionConfig:
+      title: On Interval Function
+      required:
+      - intervalBetweenStartOfExecutionsMillis
+      - outputChannel
+      - type
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/FunctionTypeEnum'
+        intervalBetweenStartOfExecutionsMillis:
+          type: integer
+          format: int32
+        limitOfRetries:
+          type: integer
+          format: int32
+        intervalBetweenStartOfRetriesMillis:
+          type: integer
+          format: int32
+        outputChannel:
+          type: string
+    OnIntervalWithSubscriptionFunctionConfig:
+      title: On Interval with Subscription
+      required:
+      - inputChannels
+      - intervalBetweenStartOfExecutionsMillis
+      - outputChannel
+      - type
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/FunctionTypeEnum'
+        intervalBetweenStartOfExecutionsMillis:
+          type: integer
+          format: int32
+        limitOfRetries:
+          type: integer
+          format: int32
+        intervalBetweenStartOfRetriesMillis:
+          type: integer
+          format: int32
+        inputChannels:
+          type: array
+          items:
+            type: string
+        outputChannel:
+          type: string
+    RestFunctionConfig:
+      title: REST Function
+      required:
+      - outputChannel
+      - path
+      - type
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/FunctionTypeEnum'
+        path:
+          type: string
+        outputChannel:
+          type: string
+    FunctionTestInputDTO:
+      required:
+      - createdDttm
+      - functionRevisionId
+      - id
+      - mimeType
+      - payload
+      type: object
+      properties:
+        id:
+          type: string
+        functionRevisionId:
+          type: string
+        payload:
+          type: string
+        mimeType:
+          pattern: application/octet-stream|text/plain|application/json
+          type: string
+        description:
+          type: string
+        createdDttm:
+          type: string
+          format: date-time
+        updatedDttm:
+          type: string
+          format: date-time
+    FunctionRevisionTestInputCreateUpdateRequest:
+      required:
+      - mimeType
+      - payload
+      type: object
+      properties:
+        payload:
+          type: string
+        mimeType:
+          pattern: application/octet-stream|text/plain|application/json
+          type: string
+        description:
+          type: string
+    PackageUpdateRequest:
+      required:
+      - name
+      - tags
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        tags:
+          maxItems: 5
+          minItems: 0
+          type: array
+          items:
+            maxLength: 5
+            minLength: 0
+            pattern: '[a-z_][a-z_0-9]{0,63}'
+            type: string
+    PackageRevisionDTO:
+      required:
+      - createdDttm
+      - functions
+      - id
+      - name
+      - packageDeploymentsRunning
+      - packageDeploymentsTotal
+      - packageId
+      type: object
+      properties:
+        id:
+          type: string
+        packageId:
+          type: string
+        name:
+          maxLength: 255
+          minLength: 0
+          type: string
+        description:
+          type: string
+        packageDeploymentsTotal:
+          minimum: 0
+          type: integer
+          format: int32
+        packageDeploymentsRunning:
+          minimum: 0
+          type: integer
+          format: int32
+        createdDttm:
+          type: string
+          format: date-time
+        updatedDttm:
+          type: string
+          format: date-time
+        functions:
+          type: array
+          items:
+            $ref: '#/components/schemas/FunctionDTO'
+    PackageRevisionUpdateRequest:
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+    PackageDeploymentDTO:
+      required:
+      - createdDttm
+      - functionDeployments
+      - id
+      - keyset
+      - packageName
+      - packageRevisionId
+      - state
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        packageName:
+          type: string
+        packageRevisionId:
+          type: string
+          format: uuid
+        keyset:
+          $ref: '#/components/schemas/KeysetDTO'
+        state:
+          type: string
+          enum:
+          - STARTING
+          - RESTARTING
+          - RUNNING
+          - STOPPING
+          - STOPPED
+          - FAILED
+        functionDeployments:
+          type: array
+          items:
+            $ref: '#/components/schemas/FunctionDeploymentDTO'
+        createdDttm:
+          type: string
+          format: date-time
+        updatedDttm:
+          type: string
+          format: date-time
+    IntersectedPackageDeploymentsDTO:
+      type: object
+      required:
+      - channel
+      - packageDeployments
+      properties:
+        channel:
+          type: string
+        packageDeployments:
+          type: array
+          items:
+            $ref: '#/components/schemas/PackageDeploymentDTO'
+    PackageDeploymentRollingUpdateRequest:
+      required:
+      - newPackageDeploymentId
+      type: object
+      properties:
+        newPackageDeploymentId:
+          type: string
+    FunctionDeploymentDTO:
+      required:
+      - createdDttm
+      - functionName
+      - functionRevisionId
+      - functionType
+      - state
+      type: object
+      properties:
+        functionName:
+          type: string
+        functionRevisionId:
+          type: string
+          format: uuid
+        functionType:
+          $ref: '#/components/schemas/FunctionTypeEnum'
+        state:
+          type: string
+          enum:
+          - STARTING
+          - RUNNING
+          - STOPPING
+          - STOPPED
+          - FAILED
+        createdDttm:
+          type: string
+          format: date-time
+        updatedDttm:
+          type: string
+          format: date-time
+    KeyValueDTO:
+      required:
+      - key
+      - value
+      - ttlSeconds
+      type: object
+      properties:
+        key:
+          maxLength: 1000
+          minLength: 0
+          type: string
+        value:
+          type: object
+        ttlSeconds:
+          type: integer
+          format: int32
+          minimum: 20
+          maximum: 31536000
+          default: 86400
+    SecretDTO:
+      required:
+      - key
+      type: object
+      properties:
+        key:
+          maxLength: 1000
+          minLength: 0
+          type: string
+    StringUpsertRequest:
+      required:
+      - value
+      type: object
+      properties:
+        value:
+          type: string
+          maxLength: 32000
+          minLength: 1
+        ttlSeconds:
+          type: integer
+          format: int32
+          minimum: 20
+          maximum: 31536000
+          default: 86400
+    JsonUpsertRequest:
+      required:
+      - value
+      type: object
+      properties:
+        value:
+          type: object
+        ttlSeconds:
+          type: integer
+          format: int32
+          minimum: 20
+          maximum: 31536000
+          default: 86400
+    SecretUpsertRequest:
+      required:
+      - value
+      type: object
+      properties:
+        value:
+          type: string
+    CounterMutateRequest:
+      required:
+      - value
+      type: object
+      properties:
+        value:
+          type: integer
+          format: int64
+    ScheduledEventCreateRequest:
+      required:
+      - dttmBegin
+      - dttmEnd
+      - packageDeploymentId
+      type: object
+      properties:
+        packageDeploymentId:
+          type: string
+          format: uuid
+        dttmBegin:
+          type: string
+          format: date-time
+        dttmEnd:
+          type: string
+          format: date-time
+        description:
+          maxLength: 255
+          minLength: 0
+          type: string
+    LimitDTO:
+      required:
+      - currentValue
+      - description
+      - maxValue
+      - name
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        maxValue:
+          type: object
+        currentValue:
+          type: object
+    PackageRevisionCreateRequest:
+      required:
+      - functions
+      - name
+      - packageId
+      type: object
+      properties:
+        packageId:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        functions:
+          type: array
+          items:
+            $ref: '#/components/schemas/FunctionCreateOrUpdateRequest'
+    PackageDeploymentCreateRequest:
+      required:
+      - keysetId
+      - packageRevisionId
+      type: object
+      properties:
+        packageRevisionId:
+          type: string
+        keysetId:
+          type: integer
+          format: int32
+    FunctionImportRequest:
+      required:
+      - functionBlueprintId
+      - params
+      type: object
+      properties:
+        functionBlueprintId:
+          type: string
+        name:
+          type: string
+        sortOrder:
+          maximum: 32767
+          minimum: 0
+          type: integer
+          format: int32
+        params:
+          type: array
+          items:
+            $ref: '#/components/schemas/FunctionParam'
+    FunctionParam:
+      required:
+      - functionBlueprintParamId
+      type: object
+      properties:
+        functionBlueprintParamId:
+          type: string
+        key:
+          type: string
+        value:
+          type: string
+    ScheduledActionDTO:
+      required:
+      - accountId
+      - createdDttm
+      - dttm
+      - id
+      - packageDeploymentId
+      - state
+      - type
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        accountId:
+          type: integer
+          format: int32
+        packageDeploymentId:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum:
+          - START
+          - STOP
+        dttm:
+          type: string
+          format: date-time
+        description:
+          type: string
+        state:
+          type: string
+          enum:
+          - PENDING
+          - EXECUTING
+          - COMPLETED
+          - FAILED
+        createdDttm:
+          type: string
+          format: date-time
+        updatedDttm:
+          type: string
+          format: date-time
+    ScheduledEventDTO:
+      required:
+      - createdDttm
+      - description
+      - dttmBegin
+      - dttmEnd
+      - id
+      - scheduledActions
+      - state
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        dttmBegin:
+          type: string
+          format: date-time
+        dttmEnd:
+          type: string
+          format: date-time
+        description:
+          type: string
+        state:
+          type: string
+          enum:
+          - PENDING
+          - STARTING
+          - RUNNING
+          - FINISHING
+          - COMPLETED
+          - FAILED
+        scheduledActions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScheduledActionDTO'
+        createdDttm:
+          type: string
+          format: date-time
+        updatedDttm:
+          type: string
+          format: date-time
+    ScheduledEventUpdateRequest:
+      type: object
+      properties:
+        dttmBegin:
+          type: string
+          format: date-time
+        dttmEnd:
+          type: string
+          format: date-time
+        description:
+          type: string
+  parameters:
+    PathParamPackageBlueprintId:
+      name: packageBlueprintId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    PathParamFunctionBlueprintId:
+      name: functionBlueprintId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    PathParamPackageId:
+      name: packageId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    PathParamPackageRevisionId:
+      name: packageRevisionId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    PathParamFunctionRevisionId:
+      name: functionRevisionId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    PathParamFunctionTestInputId:
+      name: functionTestInputId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    PathParamPackageDeploymentId:
+      name: packageDeploymentId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    PathParamKVStorageKey:
+      name: key
+      in: path
+      required: true
+      schema:
+        type: string
+    PathParamScheduledEventId:
+      name: scheduledEventId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    QueryParamPageablePageNumber:
+      name: page
+      in: query
+      description: Zero-based page index (0..N)
+      required: false
+      schema:
+        minimum: 0
+        type: integer
+        default: 0
+    QueryParamPageablePageSize:
+      name: size
+      in: query
+      description: The size of the page to be returned
+      required: false
+      schema:
+        minimum: 1
+        type: integer
+        default: 30
+    QueryParamPageableSort:
+      name: sort
+      in: query
+      description: 'Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.'
+      required: false
+      schema:
+        type: array
+        items:
+          type: string
+    QueryParamSearch:
+      name: search
+      in: query
+      required: false
+      schema:
+        type: string
+    QueryParamAccountId:
+      name: account_id
+      in: query
+      required: true
+      schema:
+        type: integer
+        format: int32
+    QueryParamOptionalKeysetId:
+      name: keyset_id
+      in: query
+      required: false
+      schema:
+        type: integer
+        format: int32
+    QueryParamRequiredKeysetId:
+      name: keyset_id
+      in: query
+      required: true
+      schema:
+        type: integer
+        format: int32
+    QueryParamPackageDeploymentState:
+      name: state
+      in: query
+      required: false
+      schema:
+        type: string
+        enum:
+          - STARTING
+          - RESTARTING
+          - RUNNING
+          - STOPPING
+          - STOPPED
+          - FAILED
+    QueryParamPackageId:
+      name: package_id
+      in: query
+      required: false
+      schema:
+        type: string
+        format: uuid
+    QueryParamPackageRevisionId:
+      name: package_revision_id
+      in: query
+      required: false
+      schema:
+        type: string
+        format: uuid
+    QueryParamSubkey:
+      name: subkey
+      in: query
+      required: true
+      schema:
+        type: string
+    QueryParamKVPageSize:
+      name: size
+      in: query
+      required: false
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+        maximum: 300
+        default: 100
+    QueryParamKVPageToken:
+      name: page_token
+      in: query
+      required: false
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 40
+        example: '0x000600046b657931f07ffffffef07ffffffe'
+    QueryParamTagNames:
+      name: tag_names
+      in: query
+      required: false
+      schema:
+        type: array
+        items:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: 'PORTAL_CATALOG'
+    QueryParamTagIds:
+      name: tag_ids
+      in: query
+      required: false
+      schema:
+        type: array
+        items:
+          type: string
+          format: uuid
+    QueryParamRequiredChannelsArray:
+      name: channel
+      in: query
+      required: true
+      style: form
+      explode: true
+      schema:
+        type: array
+        items:
+          minItems: 1
+          type: string
+    QueryParamOptionalFunctionType:
+      name: function_type
+      in: query
+      required: false
+      schema:
+        $ref: '#/components/schemas/FunctionTypeEnum'

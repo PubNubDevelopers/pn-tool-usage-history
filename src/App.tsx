@@ -3,7 +3,6 @@ import { useAuth } from './context/AuthContext';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import UsageSummary from './pages/UsageSummary';
-import Insights from './pages/Insights';
 import Features from './pages/Features';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -42,14 +41,6 @@ function App() {
         element={
           <ProtectedRoute>
             <UsageSummary />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/insights"
-        element={
-          <ProtectedRoute>
-            <Insights />
           </ProtectedRoute>
         }
       />

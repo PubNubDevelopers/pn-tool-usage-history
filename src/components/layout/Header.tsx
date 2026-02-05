@@ -1,10 +1,19 @@
 import { useState } from 'react';
 import DatePicker from 'react-datepicker';
 import { useAuth } from '../../context/AuthContext';
-import { Calendar, RefreshCw, Loader2 } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
+import { Calendar, RefreshCw, Loader2, ExternalLink } from 'lucide-react';
 import 'react-datepicker/dist/react-datepicker.css';
 
+// Map routes to page titles
+const pageTitles: Record<string, string> = {
+  '/usage-summary': 'Usage Summary',
+  '/dashboard': 'Detailed View',
+  '/features': 'Features',
+};
+
 export default function Header() {
+  const location = useLocation();
   const {
     startDate,
     endDate,
@@ -13,11 +22,14 @@ export default function Header() {
     fetchUsage,
     isLoadingUsage,
     selectedAccountId,
+    selectedAccount,
     selectedAppId,
     apps,
     keys,
     selectedKeyId,
   } = useAuth();
+  
+  const pageTitle = pageTitles[location.pathname] || 'Usage Dashboard';
 
   const [localStartDate, setLocalStartDate] = useState<Date>(new Date(startDate));
   const [localEndDate, setLocalEndDate] = useState<Date>(new Date(endDate));
@@ -53,31 +65,72 @@ export default function Header() {
   const selectedApp = apps.find((a) => a.id === selectedAppId);
   const selectedKey = keys.find((k) => k.id === selectedKeyId);
 
-  const selectionLabel = selectedAccountId
-    ? [
-        `Account: ${selectedAccountId}`,
-        selectedAppId === 'all-apps'
-          ? 'All Apps'
-          : selectedApp
-          ? selectedApp.name
-          : null,
-        selectedKeyId === 'all-keys'
-          ? 'All Keys'
-          : selectedKey
-          ? selectedKey.properties?.name || `Key ${selectedKey.id}`
-          : null,
-      ]
-        .filter(Boolean)
-        .join(' → ')
-    : 'No account selected';
+  // Build selection path (app → key)
+  const selectionPath = [
+    selectedAppId === 'all-apps'
+      ? 'All Apps'
+      : selectedApp
+      ? selectedApp.name
+      : null,
+    selectedKeyId === 'all-keys'
+      ? 'All Keys'
+      : selectedKey
+      ? selectedKey.properties?.name || `Key ${selectedKey.id}`
+      : null,
+  ]
+    .filter(Boolean)
+    .join(' → ');
 
   return (
     <header className="bg-pn-surface border-b border-pn-border px-6 py-4">
       <div className="flex items-center justify-between">
         {/* Current Selection */}
         <div>
-          <h1 className="text-xl font-semibold text-white">Usage Dashboard</h1>
-          <p className="text-sm text-pn-text-secondary mt-1">{selectionLabel}</p>
+          <h1 className="text-xl font-semibold text-white">{pageTitle}</h1>
+          <div className="flex items-center gap-2 text-sm text-pn-text-secondary mt-1">
+            {selectedAccount ? (
+              <>
+                <a
+                  href={`https://internal-admin.pubnub.com/account/${selectedAccount.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-pn-blue hover:text-blue-400 transition-colors"
+                  title="Open in Admin Portal"
+                >
+                  <span>{selectedAccount.email}</span>
+                  <span className="text-pn-text-secondary">({selectedAccount.id})</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+                {selectionPath && (
+                  <>
+                    <span>→</span>
+                    <span>{selectionPath}</span>
+                  </>
+                )}
+              </>
+            ) : selectedAccountId ? (
+              <>
+                <a
+                  href={`https://internal-admin.pubnub.com/account/${selectedAccountId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-pn-blue hover:text-blue-400 transition-colors"
+                  title="Open in Admin Portal"
+                >
+                  <span>Account: {selectedAccountId}</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+                {selectionPath && (
+                  <>
+                    <span>→</span>
+                    <span>{selectionPath}</span>
+                  </>
+                )}
+              </>
+            ) : (
+              <span>No account selected</span>
+            )}
+          </div>
         </div>
 
         {/* Date Range & Refresh */}

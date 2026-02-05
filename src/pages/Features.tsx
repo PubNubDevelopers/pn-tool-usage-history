@@ -29,6 +29,7 @@ interface FilterState {
 export default function Features() {
   const {
     selectedAccountId,
+    selectedAccount,
     apps,
     startDate,
     endDate,
@@ -103,11 +104,6 @@ export default function Features() {
         if (keysResponse.ok) {
           const keys = await keysResponse.json();
 
-          // Debug: Log first keyset structure
-          if (keys.length > 0) {
-            console.log('Sample keyset structure:', JSON.stringify(keys[0], null, 2));
-          }
-
           // For each key, detect features from config and usage
           for (const key of keys) {
             try {
@@ -121,22 +117,11 @@ export default function Features() {
               // First, detect features from keyset config (fast and accurate)
               const features = detectFeaturesFromConfig(key as KeySet);
 
-              // Debug: Log feature detection for first few keys
-              if (appFeatures.keysets.length < 3) {
-                console.log(`\n=== Keyset: ${keysetName} ===`);
-                console.log('Full key object keys:', Object.keys(key));
-                console.log('pnconfig:', key.pnconfig);
-                console.log('config:', key.config);
-                console.log('properties:', key.properties);
-                console.log('Detected features from config:', features);
-              }
-
               // Check if config detection found anything, otherwise fall back to usage detection
               const hasAnyConfigFeature = Object.values(features).some(v => v === true);
 
               if (!hasAnyConfigFeature) {
                 // Fallback to usage-based detection if config has no features
-                console.log(`No config features found for ${keysetName}, using usage-based detection`);
                 try {
                   let keyUsage = getCachedUsageForKey(key.id, startDate, endDate);
 
@@ -155,7 +140,7 @@ export default function Features() {
                   features.eventsActions = usageFeatures.eventsActions;
                   features.illuminate = usageFeatures.illuminate;
                 } catch (usageErr) {
-                  console.error(`Failed to fetch usage for key ${key.id}:`, usageErr);
+                  // Silently continue with config-based features only
                 }
               } else {
                 // For Functions, Events & Actions, and Illuminate, we still need to check usage
@@ -172,7 +157,6 @@ export default function Features() {
                   features.eventsActions = usageFeatures.eventsActions;
                   features.illuminate = usageFeatures.illuminate;
                 } catch (usageErr) {
-                  console.error(`Failed to fetch usage for key ${key.id}, Functions/Events/Illuminate will show as disabled:`, usageErr);
                   // Continue with config-based features only
                 }
               }
@@ -207,20 +191,38 @@ export default function Features() {
               // Always try to fetch Functions configuration
               if (key.id) {
                 try {
+                  const subscribeKey = key.subscribe_key || key.subscribeKey;
+                  console.log(`[Functions] Fetching for key ${key.id}, account ${selectedAccountId}, subscribe_key: ${subscribeKey?.substring(0, 20)}...`);
                   const functionsResponse = await fetch(
-                    `/api/functions?keyid=${key.id}&token=${session?.token}`
+                    `/api/functions?keyid=${key.id}&token=${session?.token}&accountid=${selectedAccountId}&subscribekey=${subscribeKey}`
                   );
+                  console.log(`[Functions] Response status: ${functionsResponse.status}`);
                   if (functionsResponse.ok) {
                     const functionsData = await functionsResponse.json();
+                    console.log(`[Functions] Raw data:`, functionsData);
                     const initialFunctionsConfig = parseFunctionsConfig(functionsData);
+                    console.log(`[Functions] Parsed config:`, initialFunctionsConfig);
                     if (initialFunctionsConfig) {
                       features.functions = true;
                       features.functionsConfig = initialFunctionsConfig;
+                      console.log(`[Functions] ✓ Set features.functions = true`);
+                    } else {
+                      // No functions configured - clear the flag that usage detection might have set
+                      features.functions = false;
+                      features.functionsConfig = undefined;
+                      console.log(`[Functions] ✗ No functions configured, set features.functions = false`);
                     }
+                  } else {
+                    // API returned error (404, etc.) - clear the flag
+                    features.functions = false;
+                    features.functionsConfig = undefined;
+                    console.log(`[Functions] ✗ API error ${functionsResponse.status}, set features.functions = false`);
                   }
                 } catch (err) {
-                  console.error(`Failed to fetch functions for key ${key.id}:`, err);
-                  // Continue without functions config
+                  console.error(`[Functions] Failed to fetch for key ${key.id}:`, err);
+                  // Clear the flag on error too
+                  features.functions = false;
+                  features.functionsConfig = undefined;
                 }
               }
 
@@ -236,11 +238,17 @@ export default function Features() {
                     if (initialEventsActionsConfig) {
                       features.eventsActions = true;
                       features.eventsActionsConfig = initialEventsActionsConfig;
+                    } else {
+                      features.eventsActions = false;
+                      features.eventsActionsConfig = undefined;
                     }
+                  } else {
+                    features.eventsActions = false;
+                    features.eventsActionsConfig = undefined;
                   }
                 } catch (err) {
-                  console.error(`Failed to fetch events & actions for key ${key.id}:`, err);
-                  // Continue without events & actions config
+                  features.eventsActions = false;
+                  features.eventsActionsConfig = undefined;
                 }
               }
 
@@ -252,7 +260,6 @@ export default function Features() {
                 features,
               });
             } catch (err) {
-              console.error(`Failed to process key ${key.id}:`, err);
               // Continue with next key
             }
           }
@@ -266,7 +273,6 @@ export default function Features() {
 
       setAppFeaturesData(featuresData);
     } catch (err: any) {
-      console.error('Failed to fetch feature data:', err);
       setError(err.message || 'Failed to fetch feature data');
     } finally {
       setLoading(false);
@@ -308,7 +314,6 @@ export default function Features() {
       }
 
       const data = await response.json();
-      console.log('Keyset details for', keysetId, ':', data);
 
       // Parse the relevant config
       const newConfigs = detailedConfigs.get(keysetId) || {};
@@ -351,8 +356,6 @@ export default function Features() {
         return newMap;
       });
     } catch (err: any) {
-      console.error(`Failed to fetch detailed config for keyset ${keysetId}:`, err);
-
       // Store error
       setConfigErrors(prev => {
         const newMap = new Map(prev);
@@ -724,11 +727,31 @@ export default function Features() {
         <Header />
         <main className="flex-1 overflow-y-auto p-6">
           <div className="mb-6 flex items-start justify-between">
-            <div>
+            <div className="flex-1">
               <h1 className="text-2xl font-bold text-white mb-2">Features</h1>
-              <p className="text-pn-text-secondary">
+              <p className="text-pn-text-secondary mb-3">
                 Feature configuration across all apps and keysets (from keyset config + usage data)
               </p>
+              {selectedAccount && (
+                <div className="bg-pn-surface border border-pn-border rounded-lg p-4 max-w-2xl">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <span className="text-xs text-pn-text-secondary uppercase tracking-wider">Account ID</span>
+                      <p className="text-white font-mono text-sm mt-1">{selectedAccount.id}</p>
+                    </div>
+                    <div>
+                      <span className="text-xs text-pn-text-secondary uppercase tracking-wider">Email</span>
+                      <p className="text-white text-sm mt-1">{selectedAccount.email}</p>
+                    </div>
+                    {selectedAccount.properties?.company && (
+                      <div className="col-span-2">
+                        <span className="text-xs text-pn-text-secondary uppercase tracking-wider">Company</span>
+                        <p className="text-white text-sm mt-1">{selectedAccount.properties.company}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
             {appFeaturesData.length > 0 && (
               <div className="flex gap-2">
@@ -943,7 +966,7 @@ export default function Features() {
                               <div className="flex flex-col">
                                 <div className="flex items-center gap-2">
                                   <a
-                                    href={`https://internal-admin.pubnub.com/accounts/${selectedAccountId}/apps/${app.appId}`}
+                                    href={`https://internal-admin.pubnub.com/account/${selectedAccountId}/app/${app.appId}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="text-white hover:text-pn-blue transition-colors"
@@ -1051,7 +1074,7 @@ export default function Features() {
                                 <div className="pl-8 flex flex-col">
                                   <div className="flex items-center gap-2">
                                     <a
-                                      href={`https://internal-admin.pubnub.com/accounts/${selectedAccountId}/apps/${app.appId}/keys/${keyset.keyId}`}
+                                      href={`https://internal-admin.pubnub.com/account/${selectedAccountId}/app/${app.appId}/key/${keyset.keyId}`}
                                       target="_blank"
                                       rel="noopener noreferrer"
                                       className="text-pn-text-secondary hover:text-pn-blue transition-colors"

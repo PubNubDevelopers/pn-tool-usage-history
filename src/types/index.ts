@@ -105,42 +105,6 @@ export interface UsageCacheEntry {
   fetchedAt: number;
 }
 
-// Insights features types
-export interface HealthScore {
-  overall: number;
-  components: {
-    growth: number;
-    adoption: number;
-    efficiency: number;
-    engagement: number;
-  };
-  trend: 'improving' | 'stable' | 'declining';
-  calculatedAt: Date;
-}
-
-export interface Anomaly {
-  date: Date;
-  metric: string;
-  value: number;
-  expected: number;
-  deviation: number;
-  severity: 'info' | 'warning' | 'critical';
-  type: 'spike' | 'drop' | 'zero';
-  explanation?: string;
-}
-
-export interface ArchitectureIssue {
-  id: string;
-  category: 'cost' | 'performance' | 'scalability' | 'security' | 'reliability';
-  severity: 'low' | 'medium' | 'high';
-  title: string;
-  description: string;
-  currentValue: string;
-  recommendation: string;
-  potentialImpact: string;
-  effort: 'low' | 'medium' | 'high';
-}
-
 // Features page types
 export interface FeatureStatus {
   streamController: boolean; // Stream Controller (NEW)

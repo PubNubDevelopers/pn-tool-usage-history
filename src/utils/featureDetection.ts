@@ -359,41 +359,75 @@ export function parseFilesConfig(apiResponse: any): FilesConfig | null {
 
 /**
  * Parse Functions configuration from API response
+ * The internal admin API returns either:
+ * 1. { modules: [...] } - array of function modules/packages
+ * 2. Empty object {} or { modules: [] } if no functions configured
  */
 export function parseFunctionsConfig(apiResponse: any): FunctionsConfig | null {
   try {
-    const modules = apiResponse?.modules || [];
+    console.log('[parseFunctionsConfig] Raw API response:', JSON.stringify(apiResponse).substring(0, 500));
 
-    if (modules.length === 0) return null;
+    // Handle empty response
+    if (!apiResponse || Object.keys(apiResponse).length === 0) {
+      console.log('[parseFunctionsConfig] Empty response, no functions configured');
+      return null;
+    }
+
+    const modules = apiResponse?.modules || [];
+    console.log('[parseFunctionsConfig] Found modules:', modules.length);
+
+    // If no modules, return null (no functions configured)
+    if (modules.length === 0) {
+      console.log('[parseFunctionsConfig] No modules found, returning null');
+      return null;
+    }
 
     let totalFunctions = 0;
     let runningFunctions = 0;
 
     const parsedModules = modules.map((module: any) => {
-      const functions = module.functions || [];
+      // Functions can be in different fields depending on API version
+      const functions = module.functions || module.function_revisions || [];
+      console.log(`[parseFunctionsConfig] Module "${module.name}" has ${functions.length} functions`);
+
       totalFunctions += functions.length;
-      runningFunctions += functions.filter((f: any) => f.enabled).length;
+
+      // Check various fields for enabled status
+      runningFunctions += functions.filter((f: any) => {
+        // Function can be enabled via: enabled: true, status: 'RUNNING', state: 'RUNNING'
+        const isEnabled = f.enabled === true ||
+                         f.status === 'RUNNING' ||
+                         f.state === 'RUNNING' ||
+                         f.enabled === 1;
+        return isEnabled;
+      }).length;
 
       return {
         id: module.id,
-        name: module.name,
+        name: module.name || module.package_name || 'Unnamed Module',
         functions: functions.map((f: any) => ({
           id: f.id,
-          name: f.name,
-          type: f.type,
-          enabled: f.enabled,
+          name: f.name || f.function_name || 'Unnamed Function',
+          type: f.type || f.function_type,
+          enabled: f.enabled === true ||
+                  f.status === 'RUNNING' ||
+                  f.state === 'RUNNING' ||
+                  f.enabled === 1,
         })),
       };
     });
 
-    return {
+    const config = {
       modules: parsedModules,
       totalModules: modules.length,
       totalFunctions,
       runningFunctions,
     };
+
+    console.log('[parseFunctionsConfig] Final config:', JSON.stringify(config));
+    return config;
   } catch (error) {
-    console.error('[parseFunctionsConfig] Error:', error);
+    console.error('[parseFunctionsConfig] Error parsing functions config:', error);
     return null;
   }
 }
