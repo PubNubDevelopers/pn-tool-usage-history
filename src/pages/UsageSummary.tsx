@@ -3,7 +3,9 @@ import { useAuth } from '../context/AuthContext';
 import Sidebar from '../components/layout/Sidebar';
 import Header from '../components/layout/Header';
 import { formatNumber } from '../utils/metrics';
-import { Loader2, ChevronDown, ChevronRight, TrendingUp } from 'lucide-react';
+import { Loader2, ChevronDown, ChevronRight, TrendingUp, Download } from 'lucide-react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 interface KeysetUsage {
   keyId: number;
@@ -27,6 +29,8 @@ export default function UsageSummary() {
     startDate,
     endDate,
     session,
+    fetchUsageForKey,
+    getCachedUsageForKey,
   } = useAuth();
 
   const [loading, setLoading] = useState(false);
@@ -52,7 +56,7 @@ export default function UsageSummary() {
 
   // Fetch usage for all apps and keys
   const fetchAllUsage = async () => {
-    if (!selectedAccountId || !session?.token) {
+    if (!selectedAccountId) {
       setError('Please select an account first');
       return;
     }
@@ -74,9 +78,9 @@ export default function UsageSummary() {
           expanded: false,
         };
 
-        // Fetch keys for this app
+        // Fetch keys for this app (this will be cached if already fetched)
         const keysResponse = await fetch(
-          `/api/keys?appid=${app.id}&token=${session.token}`
+          `/api/keys?appid=${app.id}&token=${session?.token}`
         );
 
         if (keysResponse.ok) {
@@ -87,14 +91,18 @@ export default function UsageSummary() {
             console.log('Sample key structure:', keys[0]);
           }
 
-          // For each key, fetch usage
+          // For each key, fetch usage with caching
           for (const key of keys) {
-            const keyUsageResponse = await fetch(
-              `/api/key-usage?keyid=${key.id}&token=${session.token}&start=${startDate}&end=${endDate}`
-            );
-
-            if (keyUsageResponse.ok) {
-              const keyUsage = await keyUsageResponse.json();
+            try {
+              // Check cache first, then fetch if needed
+              let keyUsage = getCachedUsageForKey(key.id, startDate, endDate);
+              
+              if (!keyUsage) {
+                // Not cached, fetch from API
+                keyUsage = await fetchUsageForKey(key.id, startDate, endDate);
+              } else {
+                console.log(`Using cached data for key ${key.id}`);
+              }
               
               // Process monthly data
               const monthlyData: Record<string, number> = {};
@@ -135,6 +143,9 @@ export default function UsageSummary() {
                 });
                 appUsage.totalUsage += keyTotal;
               }
+            } catch (err) {
+              console.error(`Failed to fetch usage for key ${key.id}:`, err);
+              // Continue with next key
             }
           }
         }
@@ -164,19 +175,138 @@ export default function UsageSummary() {
     );
   };
 
+  // Export to PDF
+  const exportToPDF = () => {
+    const doc = new jsPDF({
+      orientation: 'landscape',
+      unit: 'mm',
+      format: 'a4',
+    });
+
+    // Title
+    doc.setFontSize(18);
+    doc.setTextColor(231, 76, 60); // PubNub red
+    doc.text('PubNub Usage Summary Report', 14, 15);
+
+    // Account info
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    doc.text(`Account ID: ${selectedAccountId}`, 14, 22);
+    doc.text(`Period: ${new Date(startDate).toLocaleDateString()} - ${new Date(endDate).toLocaleDateString()}`, 14, 27);
+    doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 32);
+
+    // Calculate totals
+    const grandTotal = appUsageData.reduce((sum, app) => sum + app.totalUsage, 0);
+    doc.setFontSize(12);
+    doc.setTextColor(0, 0, 0);
+    doc.text(`Total Usage: ${formatNumber(grandTotal)}`, 14, 40);
+
+    // Prepare table data
+    const tableData: any[] = [];
+    
+    appUsageData.forEach(app => {
+      // Add app row
+      const appRow = [
+        app.appName,
+        formatNumber(app.totalUsage),
+        ...monthLabels.map(month => {
+          const monthTotal = app.keysets.reduce(
+            (sum, key) => sum + (key.monthlyData[month] || 0),
+            0
+          );
+          return monthTotal > 0 ? formatNumber(monthTotal) : '-';
+        })
+      ];
+      tableData.push(appRow);
+
+      // Add keyset rows
+      app.keysets.forEach(keyset => {
+        // Remove "% %" prefix from keyset name if it exists
+        const cleanKeysetName = keyset.keyName.replace(/^%\s*%\s*/g, '').trim();
+        const keysetRow = [
+          `  └─ ${cleanKeysetName}`,
+          formatNumber(keyset.totalUsage),
+          ...monthLabels.map(month => 
+            keyset.monthlyData[month] ? formatNumber(keyset.monthlyData[month]) : '-'
+          )
+        ];
+        tableData.push(keysetRow);
+      });
+    });
+
+    // Create table
+    autoTable(doc, {
+      startY: 45,
+      head: [[
+        'App / Keyset',
+        'Total',
+        ...monthLabels.map(month => 
+          new Date(month + '-01').toLocaleDateString('en-US', { month: 'short', year: '2-digit' })
+        )
+      ]],
+      body: tableData,
+      theme: 'grid',
+      styles: {
+        fontSize: 8,
+        cellPadding: 2,
+      },
+      headStyles: {
+        fillColor: [231, 76, 60], // PubNub red
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+      },
+      columnStyles: {
+        0: { cellWidth: 50, fontStyle: 'bold' },
+        ...Object.fromEntries(
+          [...Array(monthLabels.length + 1)].map((_, i) => [i + 1, { halign: 'right' }])
+        ),
+      },
+      didParseCell: (data) => {
+        // Style app rows (no indent)
+        if (data.section === 'body' && data.column.index === 0) {
+          if (!data.cell.text[0].startsWith('  └─')) {
+            data.cell.styles.fillColor = [245, 245, 245];
+            data.cell.styles.fontStyle = 'bold';
+          } else {
+            data.cell.styles.textColor = [100, 100, 100];
+          }
+        }
+      },
+    });
+
+    // Footer
+    const pageCount = (doc as any).internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(150, 150, 150);
+      doc.text(
+        `Page ${i} of ${pageCount}`,
+        doc.internal.pageSize.width / 2,
+        doc.internal.pageSize.height - 10,
+        { align: 'center' }
+      );
+    }
+
+    // Save the PDF
+    const filename = `pubnub-usage-summary-${selectedAccountId}-${new Date().toISOString().split('T')[0]}.pdf`;
+    doc.save(filename);
+  };
+
   useEffect(() => {
     if (selectedAccountId && apps.length > 0) {
       fetchAllUsage();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedAccountId, apps, startDate, endDate]);
 
   if (!selectedAccountId) {
     return (
-      <div className="flex h-screen bg-pn-bg">
+      <div className="h-screen bg-pn-bg flex overflow-hidden">
         <Sidebar />
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col h-screen overflow-hidden">
           <Header />
-          <main className="flex-1 overflow-auto p-6">
+          <main className="flex-1 overflow-y-auto p-6">
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
                 <TrendingUp className="w-16 h-16 text-pn-text-secondary mx-auto mb-4" />
@@ -192,16 +322,27 @@ export default function UsageSummary() {
   }
 
   return (
-    <div className="flex h-screen bg-pn-bg">
+    <div className="h-screen bg-pn-bg flex overflow-hidden">
       <Sidebar />
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col h-screen overflow-hidden">
         <Header />
-        <main className="flex-1 overflow-auto p-6">
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold text-white mb-2">Usage Summary</h1>
-            <p className="text-pn-text-secondary">
-              Monthly usage breakdown for all apps and keysets
-            </p>
+        <main className="flex-1 overflow-y-auto p-6">
+          <div className="mb-6 flex items-start justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-white mb-2">Usage Summary</h1>
+              <p className="text-pn-text-secondary">
+                Monthly usage breakdown for all apps and keysets
+              </p>
+            </div>
+            {appUsageData.length > 0 && (
+              <button
+                onClick={exportToPDF}
+                className="flex items-center gap-2 px-4 py-2 bg-pn-blue hover:bg-pn-blue-hover text-white rounded transition-colors"
+              >
+                <Download className="w-4 h-4" />
+                Export to PDF
+              </button>
+            )}
           </div>
 
           {loading ? (

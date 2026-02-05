@@ -70,7 +70,7 @@ app.get('/login', async (req, res) => {
 // Search for accounts by email
 app.get('/search-accounts', async (req, res) => {
   console.log('GET /search-accounts', req.query);
-  
+
   const { email, token } = req.query as { email: string; token: string };
 
   if (!email || !token) {
@@ -81,13 +81,21 @@ app.get('/search-accounts', async (req, res) => {
     // Use the internal admin users search endpoint
     const response = await axios.get(
       `${INTERNAL_ADMIN_URL}/api/users`,
-      { 
+      {
         headers: { 'X-Session-Token': token },
         params: { search: email }
       }
     );
 
-    console.log('Search results:', response.data);
+    console.log('Search results for', email, ':', {
+      userCount: response.data.users?.length || 0,
+      users: response.data.users?.map((u: any) => ({
+        userId: u.user_id,
+        email: u.email,
+        accountId: u.account?.id,
+        accountEmail: u.account?.email
+      }))
+    });
     res.json(response.data);
   } catch (error: any) {
     console.error('Account search error:', error.response?.data || error.message);
@@ -112,14 +120,49 @@ app.get('/apps', async (req, res) => {
     // Use internal admin API for ghosting/impersonating customer accounts
     const response = await axios.get(
       `${INTERNAL_ADMIN_URL}/api/apps-simplified`,
-      { 
+      {
         headers: { 'X-Session-Token': token },
-        params: { owner_id: ownerid, limit: 100, search: '' }
+        params: { owner_id: ownerid, limit: 1000, search: '' }
       }
     );
 
-    console.log('Apps response:', response.data);
-    res.json(response.data);
+    console.log('Apps response for owner', ownerid, ':', {
+      totalApps: response.data.result?.length || 0,
+      total: response.data.total,
+      hasResult: !!response.data.result,
+      sampleApp: response.data.result?.[0] ? {
+        id: response.data.result[0].id,
+        name: response.data.result[0].name,
+        enabled: response.data.result[0].enabled,
+        disabled: response.data.result[0].disabled,
+        status: response.data.result[0].status,
+        allKeys: Object.keys(response.data.result[0])
+      } : null
+    });
+
+    // Filter out disabled apps (keep only enabled apps)
+    let apps = response.data.result || [];
+    const beforeFilter = apps.length;
+
+    // Apps can be marked as disabled in different ways, check multiple fields
+    apps = apps.filter((app: any) => {
+      // If there's an 'enabled' field and it's false, filter it out
+      if (app.hasOwnProperty('enabled') && app.enabled === false) return false;
+      // If there's a 'disabled' field and it's true, filter it out
+      if (app.hasOwnProperty('disabled') && app.disabled === true) return false;
+      // If there's a 'status' field and it's not 'enabled' or 'active', filter it out
+      if (app.status && !['enabled', 'active'].includes(app.status.toLowerCase())) return false;
+      // Otherwise, include it
+      return true;
+    });
+
+    console.log(`Filtered ${beforeFilter - apps.length} disabled apps, ${apps.length} enabled apps remaining`);
+
+    res.json({
+      ...response.data,
+      result: apps,
+      total: apps.length
+    });
   } catch (error: any) {
     console.error('Apps error:', error.response?.data || error.message);
     res.status(error.response?.status || 500).json({
@@ -149,17 +192,140 @@ app.get('/keys', async (req, res) => {
       }
     );
 
-    console.log('Keys response:', response.data);
-    if (response.data.result && response.data.result.length > 0) {
-      console.log('Sample key structure:', JSON.stringify(response.data.result[0], null, 2));
+    console.log('Keys response status:', response.status);
+    console.log('Keys response data keys:', Object.keys(response.data));
+
+    // Filter out disabled keysets (keep only enabled keysets)
+    let keys = response.data.result || response.data || [];
+    const beforeFilter = keys.length;
+
+    if (keys.length > 0) {
+      console.log('Sample key structure (first keyset):');
+      console.log(JSON.stringify(keys[0], null, 2));
+      console.log('pnconfig from first keyset:', keys[0].pnconfig);
     }
-    res.json(response.data.result || response.data || []);
+
+    // Keysets can be marked as disabled in different ways, check multiple fields
+    keys = keys.filter((key: any) => {
+      // If there's an 'enabled' field and it's false, filter it out
+      if (key.hasOwnProperty('enabled') && key.enabled === false) return false;
+      // If there's a 'disabled' field and it's true, filter it out
+      if (key.hasOwnProperty('disabled') && key.disabled === true) return false;
+      // If there's a 'status' field and it's not 'enabled' or 'active', filter it out
+      if (key.status && !['enabled', 'active'].includes(key.status.toLowerCase())) return false;
+      // Otherwise, include it
+      return true;
+    });
+
+    console.log(`Filtered ${beforeFilter - keys.length} disabled keysets, ${keys.length} enabled keysets remaining`);
+
+    res.json(keys);
   } catch (error: any) {
     console.error('Keys error:', error.response?.data || error.message);
     res.status(error.response?.status || 500).json({
       error: 'Failed to fetch keys',
       details: error.response?.data || error.message,
     });
+  }
+});
+
+// Get detailed keyset configuration
+app.get('/keyset-details', async (req, res) => {
+  console.log('GET /keyset-details', req.query);
+
+  const { keyid, token } = req.query as { keyid: string; token: string };
+
+  if (!keyid || !token) {
+    return res.status(400).json({ error: 'Missing keyid or token' });
+  }
+
+  try {
+    // Fetch keyset details from internal admin API
+    const response = await axios.get(
+      `${INTERNAL_ADMIN_URL}/api/app/keys/${keyid}`,
+      {
+        headers: { 'X-Session-Token': token }
+      }
+    );
+
+    console.log('Keyset details response status:', response.status);
+    console.log('Keyset details response keys:', Object.keys(response.data));
+    if (response.data.pnconfig) {
+      console.log('pnconfig keys:', Object.keys(response.data.pnconfig));
+      console.log('pnconfig sample:', JSON.stringify(response.data.pnconfig).substring(0, 500));
+    }
+    if (response.data.properties) {
+      console.log('properties keys:', Object.keys(response.data.properties));
+    }
+
+    res.json(response.data);
+  } catch (error: any) {
+    console.error('Keyset details error:', error.response?.data || error.message);
+    res.status(error.response?.status || 500).json({
+      error: 'Failed to fetch keyset details',
+      details: error.response?.data || error.message,
+    });
+  }
+});
+
+// Get Functions for a keyset
+app.get('/functions', async (req, res) => {
+  console.log('GET /functions', req.query);
+
+  const { keyid, token } = req.query as { keyid: string; token: string };
+
+  if (!keyid || !token) {
+    return res.status(400).json({ error: 'Missing keyid or token' });
+  }
+
+  try {
+    const response = await axios.get(
+      `${INTERNAL_ADMIN_URL}/api/functions/key/${keyid}`,
+      {
+        headers: { 'X-Session-Token': token },
+        timeout: 10000,
+      }
+    );
+
+    console.log('Functions response status:', response.status);
+    console.log('Functions count:', response.data?.modules?.length || 0);
+
+    res.json(response.data);
+  } catch (error: any) {
+    console.error('Functions error:', error.response?.data || error.message);
+    // Return empty result instead of error for functions (not all keysets have functions)
+    res.json({ modules: [] });
+  }
+});
+
+// Get Events & Actions for a keyset
+app.get('/events-actions', async (req, res) => {
+  console.log('GET /events-actions', req.query);
+
+  const { keyid, token } = req.query as { keyid: string; token: string };
+
+  if (!keyid || !token) {
+    return res.status(400).json({ error: 'Missing keyid or token' });
+  }
+
+  try {
+    const response = await axios.get(
+      `${INTERNAL_ADMIN_URL}/api/events-actions/key/${keyid}`,
+      {
+        headers: { 'X-Session-Token': token },
+        timeout: 10000,
+      }
+    );
+
+    console.log('Events & Actions response status:', response.status);
+    console.log('Listeners count:', response.data?.listeners?.length || 0);
+    console.log('Actions count:', response.data?.actions?.length || 0);
+
+    res.json(response.data);
+  } catch (error: any) {
+    console.error('Events & Actions error:', error.response?.data || error.message);
+    // Return empty result instead of error (not all keysets have events & actions)
+    res.json({ listeners: [], actions: [] });
   }
 });
 

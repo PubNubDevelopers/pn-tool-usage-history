@@ -22,9 +22,15 @@ exports.handler = async (event) => {
       `${INTERNAL_ADMIN_URL}/api/apps-simplified`,
       {
         headers: { 'X-Session-Token': token },
-        params: { owner_id: ownerid, limit: 100, search: '' },
+        params: { owner_id: ownerid, limit: 1000, search: '' },
       }
     );
+
+    console.log('Apps response for owner', ownerid, ':', {
+      totalApps: response.data.result?.length || 0,
+      total: response.data.total,
+      hasResult: !!response.data.result
+    });
 
     return {
       statusCode: 200,

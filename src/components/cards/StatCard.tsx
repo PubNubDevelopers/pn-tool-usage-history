@@ -4,59 +4,37 @@ interface StatCardProps {
   title: string;
   value: string;
   icon: LucideIcon;
-  color: 'blue' | 'green' | 'purple' | 'yellow' | 'pink' | 'red';
+  color: string; // Now accepts hex color like "#E41A1C"
   subtitle?: string;
 }
 
-const colorClasses = {
-  blue: {
-    bg: 'bg-blue-500/10',
-    text: 'text-blue-400',
-    icon: 'text-blue-500',
-  },
-  green: {
-    bg: 'bg-emerald-500/10',
-    text: 'text-emerald-400',
-    icon: 'text-emerald-500',
-  },
-  purple: {
-    bg: 'bg-purple-500/10',
-    text: 'text-purple-400',
-    icon: 'text-purple-500',
-  },
-  yellow: {
-    bg: 'bg-amber-500/10',
-    text: 'text-amber-400',
-    icon: 'text-amber-500',
-  },
-  pink: {
-    bg: 'bg-pink-500/10',
-    text: 'text-pink-400',
-    icon: 'text-pink-500',
-  },
-  red: {
-    bg: 'bg-red-500/10',
-    text: 'text-red-400',
-    icon: 'text-red-500',
-  },
-};
-
 export default function StatCard({ title, value, icon: Icon, color, subtitle }: StatCardProps) {
-  const colors = colorClasses[color];
+  // Convert hex to rgb for the background with opacity
+  const hexToRgb = (hex: string) => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+      r: parseInt(result[1], 16),
+      g: parseInt(result[2], 16),
+      b: parseInt(result[3], 16)
+    } : { r: 0, g: 0, b: 0 };
+  };
+
+  const rgb = hexToRgb(color);
+  const bgColor = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.1)`;
 
   return (
-    <div className="bg-pn-surface rounded-lg border border-pn-border p-5">
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-sm font-medium text-pn-text-secondary">{title}</p>
-          <p className={`text-2xl font-bold mt-1 ${colors.text}`}>{value}</p>
-          {subtitle && (
-            <p className="text-xs text-pn-text-secondary mt-1">{subtitle}</p>
-          )}
+    <div className="bg-pn-surface rounded-lg border border-pn-border p-5 h-32 flex flex-col">
+      <div className="flex items-start justify-between mb-auto">
+        <p className="text-sm font-medium text-pn-text-secondary">{title}</p>
+        <div className="p-3 rounded-lg flex-shrink-0" style={{ backgroundColor: bgColor }}>
+          <Icon className="w-6 h-6" style={{ color }} />
         </div>
-        <div className={`p-3 rounded-lg ${colors.bg}`}>
-          <Icon className={`w-6 h-6 ${colors.icon}`} />
-        </div>
+      </div>
+      <div className="mt-auto">
+        <p className="text-2xl font-bold" style={{ color }}>{value}</p>
+        {subtitle && (
+          <p className="text-xs text-pn-text-secondary mt-1">{subtitle}</p>
+        )}
       </div>
     </div>
   );

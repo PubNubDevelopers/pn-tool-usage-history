@@ -10,23 +10,11 @@ import {
 } from 'recharts';
 import { FeatureBreakdown } from '../../types';
 import { formatNumber } from '../../utils/metrics';
+import { CHART_COLORS } from '../../config/chartColors';
 
 interface ApiBreakdownChartProps {
   data: FeatureBreakdown[];
 }
-
-const COLORS = [
-  '#3b82f6', // blue
-  '#8b5cf6', // purple
-  '#ec4899', // pink
-  '#f59e0b', // amber
-  '#10b981', // emerald
-  '#06b6d4', // cyan
-  '#f97316', // orange
-  '#ef4444', // red
-  '#84cc16', // lime
-  '#6366f1', // indigo
-];
 
 export default function ApiBreakdownChart({ data }: ApiBreakdownChartProps) {
   if (data.length === 0) {
@@ -76,7 +64,7 @@ export default function ApiBreakdownChart({ data }: ApiBreakdownChartProps) {
         />
         <Bar dataKey="transactions" radius={[0, 4, 4, 0]}>
           {chartData.map((_, index) => (
-            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+            <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
           ))}
         </Bar>
       </BarChart>
