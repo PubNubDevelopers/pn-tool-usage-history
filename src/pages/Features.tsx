@@ -229,24 +229,33 @@ export default function Features() {
               // Always try to fetch Events & Actions configuration
               if (key.id) {
                 try {
+                  const subscribeKey = key.subscribe_key || key.subscribeKey;
+                  console.log(`[Events&Actions] Fetching for key ${key.id}, subscribe_key: ${subscribeKey?.substring(0, 20)}...`);
                   const eventsActionsResponse = await fetch(
-                    `/api/events-actions?keyid=${key.id}&token=${session?.token}&accountid=${selectedAccountId}`
+                    `/api/events-actions?keyid=${key.id}&token=${session?.token}&accountid=${selectedAccountId}&appid=${app.id}&subscribekey=${subscribeKey}`
                   );
+                  console.log(`[Events&Actions] Response status: ${eventsActionsResponse.status}`);
                   if (eventsActionsResponse.ok) {
                     const eventsActionsData = await eventsActionsResponse.json();
+                    console.log(`[Events&Actions] Raw data:`, eventsActionsData);
                     const initialEventsActionsConfig = parseEventsActionsConfig(eventsActionsData);
+                    console.log(`[Events&Actions] Parsed config:`, initialEventsActionsConfig);
                     if (initialEventsActionsConfig) {
                       features.eventsActions = true;
                       features.eventsActionsConfig = initialEventsActionsConfig;
+                      console.log(`[Events&Actions] ✓ Set features.eventsActions = true`);
                     } else {
                       features.eventsActions = false;
                       features.eventsActionsConfig = undefined;
+                      console.log(`[Events&Actions] ✗ No config parsed, set features.eventsActions = false`);
                     }
                   } else {
                     features.eventsActions = false;
                     features.eventsActionsConfig = undefined;
+                    console.log(`[Events&Actions] ✗ API error ${eventsActionsResponse.status}`);
                   }
                 } catch (err) {
+                  console.error(`[Events&Actions] Failed to fetch for key ${key.id}:`, err);
                   features.eventsActions = false;
                   features.eventsActionsConfig = undefined;
                 }

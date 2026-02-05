@@ -109,8 +109,10 @@ export default function FeatureCell({
           const functionsConfig = config as FunctionsConfig;
           return (
             <div className="flex items-center justify-center gap-1 text-sm" title={error}>
+              <span className="text-pn-text-secondary text-xs">M:</span>
               <span className="text-yellow-500 font-medium">{functionsConfig.totalModules}</span>
               <span className="text-pn-text-secondary">/</span>
+              <span className="text-pn-text-secondary text-xs">F:</span>
               <span className="text-yellow-500 font-medium">{functionsConfig.totalFunctions}</span>
             </div>
           );
@@ -119,8 +121,10 @@ export default function FeatureCell({
           const eventsActionsConfig = config as EventsActionsConfig;
           return (
             <div className="flex items-center justify-center gap-1 text-sm" title={error}>
+              <span className="text-pn-text-secondary text-xs">E:</span>
               <span className="text-yellow-500 font-medium">{eventsActionsConfig.totalListeners}</span>
               <span className="text-pn-text-secondary">/</span>
+              <span className="text-pn-text-secondary text-xs">A:</span>
               <span className="text-yellow-500 font-medium">{eventsActionsConfig.totalActions}</span>
             </div>
           );
@@ -211,13 +215,16 @@ export default function FeatureCell({
       const functionsConfig = config as FunctionsConfig;
       if (functionsConfig) {
         const hasRunning = functionsConfig.runningFunctions > 0;
+        const colorClass = hasRunning ? 'text-green-500' : 'text-pn-text-secondary';
         return (
           <div className="flex items-center justify-center gap-1 text-sm whitespace-nowrap">
-            <span className={hasRunning ? 'text-green-500 font-medium' : 'text-pn-text-secondary font-medium'}>
+            <span className="text-pn-text-secondary text-xs">M:</span>
+            <span className={`${colorClass} font-medium`}>
               {functionsConfig.totalModules}
             </span>
             <span className="text-pn-text-secondary">/</span>
-            <span className={hasRunning ? 'text-green-500 font-medium' : 'text-pn-text-secondary font-medium'}>
+            <span className="text-pn-text-secondary text-xs">F:</span>
+            <span className={`${colorClass} font-medium`}>
               {functionsConfig.totalFunctions}
             </span>
           </div>
@@ -229,13 +236,16 @@ export default function FeatureCell({
       const eventsActionsConfig = config as EventsActionsConfig;
       if (eventsActionsConfig) {
         const hasRunning = eventsActionsConfig.runningListeners > 0 || eventsActionsConfig.runningActions > 0;
+        const colorClass = hasRunning ? 'text-green-500' : 'text-pn-text-secondary';
         return (
           <div className="flex items-center justify-center gap-1 text-sm whitespace-nowrap">
-            <span className={hasRunning ? 'text-green-500 font-medium' : 'text-pn-text-secondary font-medium'}>
+            <span className="text-pn-text-secondary text-xs">E:</span>
+            <span className={`${colorClass} font-medium`}>
               {eventsActionsConfig.totalListeners}
             </span>
             <span className="text-pn-text-secondary">/</span>
-            <span className={hasRunning ? 'text-green-500 font-medium' : 'text-pn-text-secondary font-medium'}>
+            <span className="text-pn-text-secondary text-xs">A:</span>
+            <span className={`${colorClass} font-medium`}>
               {eventsActionsConfig.totalActions}
             </span>
           </div>
@@ -311,6 +321,15 @@ export default function FeatureCell({
 
     return <BasicTooltip title={title} enabled={enabled} />;
   };
+
+  // Don't show tooltip for disabled features
+  if (!enabled) {
+    return (
+      <div className="flex items-center justify-center">
+        <span className="text-pn-text-secondary/30">-</span>
+      </div>
+    );
+  }
 
   return (
     <div

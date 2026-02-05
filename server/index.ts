@@ -436,35 +436,87 @@ app.get('/functions', async (req, res) => {
 
 // Get Events & Actions for a keyset
 app.get('/events-actions', async (req, res) => {
-  const { keyid, token, accountid } = req.query as { keyid: string; token: string; accountid?: string };
+  const { keyid, token, accountid, appid, subscribekey } = req.query as { 
+    keyid: string; 
+    token: string; 
+    accountid?: string;
+    appid?: string;
+    subscribekey?: string;
+  };
 
   if (!keyid || !token) {
     return res.status(400).json({ error: 'Missing keyid or token' });
   }
+
+  if (!subscribekey) {
+    console.log(`[Events&Actions] No subscribe key provided for key ${keyid}`);
+    return res.json({ listeners: [], actions: [] });
+  }
+
+  console.log(`[Events&Actions] Fetching for subscribekey ${subscribekey}, account ${accountid}`);
 
   // Build headers with delegated account ID for ghosting
   const headers: any = {
     'X-Session-Token': token
   };
 
-  // Add delegated account ID for proper ghosting
+  // Add delegated account ID for proper ghosting (required!)
   if (accountid) {
     headers['x-pn-delegated-account-id'] = accountid;
   }
 
-  // Use the working endpoint: /api/events-actions/key/{keyid}
   try {
-    const response = await axios.get(
-      `${INTERNAL_ADMIN_URL}/api/events-actions/key/${keyid}`,
-      {
-        headers,
-        timeout: 10000,
-      }
-    );
+    // The correct endpoint: /api/keysets/{subscribeKey}/event-listeners
+    const endpoint = `${INTERNAL_ADMIN_URL}/api/keysets/${subscribekey}/event-listeners?page=1&limit=100`;
+    console.log(`[Events&Actions] GET: ${endpoint}`);
+    
+    const response = await axios.get(endpoint, {
+      headers,
+      timeout: 10000,
+    });
 
-    return res.json(response.data);
+    const data = response.data;
+    console.log(`[Events&Actions] SUCCESS - got ${data.total || 0} event listeners`);
+
+    // Parse the response - data.data contains array of event listeners
+    // Each listener has embedded actions array
+    const eventListeners = data.data || [];
+    
+    const listeners: any[] = [];
+    const actions: any[] = [];
+    const seenActionIds = new Set<string>();
+
+    for (const listener of eventListeners) {
+      listeners.push({
+        id: listener.id,
+        name: listener.name,
+        event: listener.category || listener.type || 'message',
+        enabled: listener.status === 'on',
+      });
+
+      // Extract actions from each listener (they're embedded)
+      if (listener.actions && Array.isArray(listener.actions)) {
+        for (const action of listener.actions) {
+          // Avoid duplicates (same action can be linked to multiple listeners)
+          if (!seenActionIds.has(action.id)) {
+            seenActionIds.add(action.id);
+            actions.push({
+              id: action.id,
+              name: action.name,
+              type: action.category || action.type || 'unknown',
+              enabled: action.status === 'on',
+            });
+          }
+        }
+      }
+    }
+
+    console.log(`[Events&Actions] ✓ Found ${listeners.length} listeners, ${actions.length} unique actions`);
+    return res.json({ listeners, actions });
   } catch (error: any) {
-    res.json({ listeners: [], actions: [] });
+    const status = error.response?.status || 'ERR';
+    console.log(`[Events&Actions] FAILED ${status}: ${error.message}`);
+    return res.json({ listeners: [], actions: [] });
   }
 });
 

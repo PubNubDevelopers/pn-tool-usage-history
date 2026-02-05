@@ -434,32 +434,45 @@ export function parseFunctionsConfig(apiResponse: any): FunctionsConfig | null {
 
 /**
  * Parse Events & Actions configuration from API response
+ * The API returns listeners and actions with various status formats
  */
 export function parseEventsActionsConfig(apiResponse: any): EventsActionsConfig | null {
   try {
-    const listeners = apiResponse?.listeners || [];
+    console.log('[parseEventsActionsConfig] Raw API response:', JSON.stringify(apiResponse).substring(0, 500));
+    
+    const listeners = apiResponse?.listeners || apiResponse?.event_listeners || [];
     const actions = apiResponse?.actions || [];
+
+    console.log(`[parseEventsActionsConfig] Found ${listeners.length} listeners, ${actions.length} actions`);
 
     if (listeners.length === 0 && actions.length === 0) return null;
 
+    // Helper to check if enabled - handles various API formats
+    const isEnabled = (item: any): boolean => {
+      if (item.enabled === true || item.enabled === 1) return true;
+      if (item.status === 'on' || item.status === 'active' || item.status === 'running') return true;
+      if (item.state === 'on' || item.state === 'active' || item.state === 'running') return true;
+      return false;
+    };
+
     const parsedListeners = listeners.map((listener: any) => ({
       id: listener.id,
-      name: listener.name,
-      event: listener.event,
-      enabled: listener.enabled,
+      name: listener.name || listener.listener_name,
+      event: listener.event || listener.source || listener.event_type,
+      enabled: isEnabled(listener),
     }));
 
     const parsedActions = actions.map((action: any) => ({
       id: action.id,
-      name: action.name,
-      type: action.type,
-      enabled: action.enabled,
+      name: action.name || action.action_name,
+      type: action.type || action.category || action.action_type,
+      enabled: isEnabled(action),
     }));
 
     const runningListeners = parsedListeners.filter((l: any) => l.enabled).length;
     const runningActions = parsedActions.filter((a: any) => a.enabled).length;
 
-    return {
+    const config = {
       listeners: parsedListeners,
       actions: parsedActions,
       totalListeners: parsedListeners.length,
@@ -467,6 +480,9 @@ export function parseEventsActionsConfig(apiResponse: any): EventsActionsConfig 
       runningListeners,
       runningActions,
     };
+
+    console.log('[parseEventsActionsConfig] Final config:', JSON.stringify(config));
+    return config;
   } catch (error) {
     console.error('[parseEventsActionsConfig] Error:', error);
     return null;
