@@ -73,7 +73,9 @@ app.get('/search-accounts', async (req, res) => {
   }
 
   try {
-    // Use the internal admin users search endpoint
+    console.log('[Account Search] Searching for email:', email);
+    
+    // Use /api/users which returns both accounts[] and users[]
     const response = await axios.get(
       `${INTERNAL_ADMIN_URL}/api/users`,
       {
@@ -82,7 +84,72 @@ app.get('/search-accounts', async (req, res) => {
       }
     );
 
-    res.json(response.data);
+    // IMPORTANT: The API returns both accounts[] and users[]
+    // - accounts[]: actual account objects (what we want!)
+    // - users[]: user objects (owner info)
+    const accountsArray = response.data.accounts || [];
+    const usersArray = response.data.users || [];
+    
+    console.log('[Account Search] API returned', accountsArray.length, 'accounts and', usersArray.length, 'users');
+    
+    // Prioritize accounts[] array if available, otherwise fall back to users[]
+    let results = accountsArray.length > 0 ? accountsArray : usersArray;
+    
+    if (results.length > 0) {
+      console.log('[Account Search] First result:', JSON.stringify(results[0], null, 2).substring(0, 500));
+    }
+    
+    // Filter to only exact email matches (case-insensitive)
+    // For accounts array: match against owner email (need to get from users array)
+    // For users array: match against user email
+    const searchEmailLower = email.toLowerCase().trim();
+    
+    let exactMatches: any[] = [];
+    
+    if (accountsArray.length > 0 && usersArray.length > 0) {
+      // We have both arrays - match accounts where the owner's email matches
+      exactMatches = accountsArray.filter((account: any) => {
+        // Find the user who owns this account
+        const owner = usersArray.find((user: any) => user.id === account.owner_id);
+        const ownerEmail = owner?.email?.toLowerCase().trim();
+        const matches = ownerEmail === searchEmailLower;
+        
+        console.log(`[Account Search] Account ${account.id}:`, {
+          ownerId: account.owner_id,
+          ownerEmail: owner?.email,
+          matches
+        });
+        
+        return matches;
+      }).map((account: any) => {
+        // Populate email field from owner for display purposes
+        const owner = usersArray.find((user: any) => user.id === account.owner_id);
+        return {
+          ...account,
+          email: owner?.email || account.email
+        };
+      });
+    } else {
+      // Fallback: just match directly on email
+      exactMatches = results.filter((item: any) => {
+        const itemEmail = item.email?.toLowerCase().trim();
+        return itemEmail === searchEmailLower;
+      });
+    }
+
+    console.log('[Account Search] Found', exactMatches.length, 'exact matches');
+    
+    // Log matches
+    exactMatches.forEach((account: any, index: number) => {
+      console.log(`[Account Search] Match ${index + 1}:`, {
+        accountId: account.id,
+        ownerId: account.owner_id,
+        email: account.email
+      });
+    });
+
+    // Return accounts in the format expected by frontend
+    res.json({ users: exactMatches });
   } catch (error: any) {
     console.error('Account search error:', error.response?.data || error.message);
     res.status(error.response?.status || 500).json({
@@ -101,6 +168,7 @@ app.get('/apps', async (req, res) => {
   }
 
   try {
+    console.log('[Apps] Fetching apps for owner_id:', ownerid);
     // Use internal admin API for ghosting/impersonating customer accounts
     const response = await axios.get(
       `${INTERNAL_ADMIN_URL}/api/apps-simplified`,
@@ -109,6 +177,7 @@ app.get('/apps', async (req, res) => {
         params: { owner_id: ownerid, search: '' }
       }
     );
+    console.log('[Apps] Found', response.data.result?.length || 0, 'apps');
 
     // Filter out disabled apps (keep only enabled apps)
     let apps = response.data.result || [];
@@ -367,10 +436,20 @@ app.get('/functions', async (req, res) => {
 
 // Get Events & Actions for a keyset
 app.get('/events-actions', async (req, res) => {
-  const { keyid, token } = req.query as { keyid: string; token: string };
+  const { keyid, token, accountid } = req.query as { keyid: string; token: string; accountid?: string };
 
   if (!keyid || !token) {
     return res.status(400).json({ error: 'Missing keyid or token' });
+  }
+
+  // Build headers with delegated account ID for ghosting
+  const headers: any = {
+    'X-Session-Token': token
+  };
+
+  // Add delegated account ID for proper ghosting
+  if (accountid) {
+    headers['x-pn-delegated-account-id'] = accountid;
   }
 
   // Use the working endpoint: /api/events-actions/key/{keyid}
@@ -378,7 +457,7 @@ app.get('/events-actions', async (req, res) => {
     const response = await axios.get(
       `${INTERNAL_ADMIN_URL}/api/events-actions/key/${keyid}`,
       {
-        headers: { 'X-Session-Token': token },
+        headers,
         timeout: 10000,
       }
     );

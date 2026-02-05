@@ -230,7 +230,7 @@ export default function Features() {
               if (key.id) {
                 try {
                   const eventsActionsResponse = await fetch(
-                    `/api/events-actions?keyid=${key.id}&token=${session?.token}`
+                    `/api/events-actions?keyid=${key.id}&token=${session?.token}&accountid=${selectedAccountId}`
                   );
                   if (eventsActionsResponse.ok) {
                     const eventsActionsData = await eventsActionsResponse.json();

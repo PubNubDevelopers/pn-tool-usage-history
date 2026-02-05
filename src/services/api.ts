@@ -23,10 +23,10 @@ export async function searchAccounts(email: string, token: string): Promise<Acco
   const response = await axios.get(`${API_BASE}/search-accounts`, {
     params: { email, token },
   });
-  // The internal-admin API returns users array, each user has an account object
-  const users = response.data.users || response.data;
-  if (Array.isArray(users)) {
-    return users.map((user: any) => user.account || user).filter(Boolean);
+  // The backend now returns actual account objects (not users)
+  const accounts = response.data.users || response.data;
+  if (Array.isArray(accounts)) {
+    return accounts.filter(Boolean);
   }
   return [];
 }
