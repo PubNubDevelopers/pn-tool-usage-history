@@ -192,34 +192,26 @@ export default function Features() {
               if (key.id) {
                 try {
                   const subscribeKey = key.subscribe_key || key.subscribeKey;
-                  console.log(`[Functions] Fetching for key ${key.id}, account ${selectedAccountId}, subscribe_key: ${subscribeKey?.substring(0, 20)}...`);
                   const functionsResponse = await fetch(
                     `/api/functions?keyid=${key.id}&token=${session?.token}&accountid=${selectedAccountId}&subscribekey=${subscribeKey}`
                   );
-                  console.log(`[Functions] Response status: ${functionsResponse.status}`);
                   if (functionsResponse.ok) {
                     const functionsData = await functionsResponse.json();
-                    console.log(`[Functions] Raw data:`, functionsData);
                     const initialFunctionsConfig = parseFunctionsConfig(functionsData);
-                    console.log(`[Functions] Parsed config:`, initialFunctionsConfig);
                     if (initialFunctionsConfig) {
                       features.functions = true;
                       features.functionsConfig = initialFunctionsConfig;
-                      console.log(`[Functions] ✓ Set features.functions = true`);
                     } else {
                       // No functions configured - clear the flag that usage detection might have set
                       features.functions = false;
                       features.functionsConfig = undefined;
-                      console.log(`[Functions] ✗ No functions configured, set features.functions = false`);
                     }
                   } else {
                     // API returned error (404, etc.) - clear the flag
                     features.functions = false;
                     features.functionsConfig = undefined;
-                    console.log(`[Functions] ✗ API error ${functionsResponse.status}, set features.functions = false`);
                   }
                 } catch (err) {
-                  console.error(`[Functions] Failed to fetch for key ${key.id}:`, err);
                   // Clear the flag on error too
                   features.functions = false;
                   features.functionsConfig = undefined;
@@ -230,32 +222,24 @@ export default function Features() {
               if (key.id) {
                 try {
                   const subscribeKey = key.subscribe_key || key.subscribeKey;
-                  console.log(`[Events&Actions] Fetching for key ${key.id}, subscribe_key: ${subscribeKey?.substring(0, 20)}...`);
                   const eventsActionsResponse = await fetch(
                     `/api/events-actions?keyid=${key.id}&token=${session?.token}&accountid=${selectedAccountId}&appid=${app.id}&subscribekey=${subscribeKey}`
                   );
-                  console.log(`[Events&Actions] Response status: ${eventsActionsResponse.status}`);
                   if (eventsActionsResponse.ok) {
                     const eventsActionsData = await eventsActionsResponse.json();
-                    console.log(`[Events&Actions] Raw data:`, eventsActionsData);
                     const initialEventsActionsConfig = parseEventsActionsConfig(eventsActionsData);
-                    console.log(`[Events&Actions] Parsed config:`, initialEventsActionsConfig);
                     if (initialEventsActionsConfig) {
                       features.eventsActions = true;
                       features.eventsActionsConfig = initialEventsActionsConfig;
-                      console.log(`[Events&Actions] ✓ Set features.eventsActions = true`);
                     } else {
                       features.eventsActions = false;
                       features.eventsActionsConfig = undefined;
-                      console.log(`[Events&Actions] ✗ No config parsed, set features.eventsActions = false`);
                     }
                   } else {
                     features.eventsActions = false;
                     features.eventsActionsConfig = undefined;
-                    console.log(`[Events&Actions] ✗ API error ${eventsActionsResponse.status}`);
                   }
                 } catch (err) {
-                  console.error(`[Events&Actions] Failed to fetch for key ${key.id}:`, err);
                   features.eventsActions = false;
                   features.eventsActionsConfig = undefined;
                 }

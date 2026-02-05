@@ -56,7 +56,6 @@ app.get('/login', async (req, res) => {
       accounts: accounts,
     });
   } catch (error: any) {
-    console.error('Login error:', error.response?.data || error.message);
     res.status(error.response?.status || 500).json({
       error: 'Login failed',
       details: error.response?.data || error.message,
@@ -73,8 +72,6 @@ app.get('/search-accounts', async (req, res) => {
   }
 
   try {
-    console.log('[Account Search] Searching for email:', email);
-    
     // Use /api/users which returns both accounts[] and users[]
     const response = await axios.get(
       `${INTERNAL_ADMIN_URL}/api/users`,
@@ -90,14 +87,8 @@ app.get('/search-accounts', async (req, res) => {
     const accountsArray = response.data.accounts || [];
     const usersArray = response.data.users || [];
     
-    console.log('[Account Search] API returned', accountsArray.length, 'accounts and', usersArray.length, 'users');
-    
     // Prioritize accounts[] array if available, otherwise fall back to users[]
     let results = accountsArray.length > 0 ? accountsArray : usersArray;
-    
-    if (results.length > 0) {
-      console.log('[Account Search] First result:', JSON.stringify(results[0], null, 2).substring(0, 500));
-    }
     
     // Filter to only exact email matches (case-insensitive)
     // For accounts array: match against owner email (need to get from users array)
@@ -112,15 +103,7 @@ app.get('/search-accounts', async (req, res) => {
         // Find the user who owns this account
         const owner = usersArray.find((user: any) => user.id === account.owner_id);
         const ownerEmail = owner?.email?.toLowerCase().trim();
-        const matches = ownerEmail === searchEmailLower;
-        
-        console.log(`[Account Search] Account ${account.id}:`, {
-          ownerId: account.owner_id,
-          ownerEmail: owner?.email,
-          matches
-        });
-        
-        return matches;
+        return ownerEmail === searchEmailLower;
       }).map((account: any) => {
         // Populate email field from owner for display purposes
         const owner = usersArray.find((user: any) => user.id === account.owner_id);
@@ -137,21 +120,9 @@ app.get('/search-accounts', async (req, res) => {
       });
     }
 
-    console.log('[Account Search] Found', exactMatches.length, 'exact matches');
-    
-    // Log matches
-    exactMatches.forEach((account: any, index: number) => {
-      console.log(`[Account Search] Match ${index + 1}:`, {
-        accountId: account.id,
-        ownerId: account.owner_id,
-        email: account.email
-      });
-    });
-
     // Return accounts in the format expected by frontend
     res.json({ users: exactMatches });
   } catch (error: any) {
-    console.error('Account search error:', error.response?.data || error.message);
     res.status(error.response?.status || 500).json({
       error: 'Failed to search accounts',
       details: error.response?.data || error.message,
@@ -168,7 +139,6 @@ app.get('/apps', async (req, res) => {
   }
 
   try {
-    console.log('[Apps] Fetching apps for owner_id:', ownerid);
     // Use internal admin API for ghosting/impersonating customer accounts
     const response = await axios.get(
       `${INTERNAL_ADMIN_URL}/api/apps-simplified`,
@@ -177,7 +147,6 @@ app.get('/apps', async (req, res) => {
         params: { owner_id: ownerid, search: '' }
       }
     );
-    console.log('[Apps] Found', response.data.result?.length || 0, 'apps');
 
     // Filter out disabled apps (keep only enabled apps)
     let apps = response.data.result || [];
@@ -302,8 +271,6 @@ app.get('/functions', async (req, res) => {
   }
 
   try {
-    console.log(`[Functions] Fetching deployments for key ${keyid}, account ${accountid || 'default'}, subscribe key: ${subscribekey?.substring(0, 20)}...`);
-
     // Build headers with delegated account ID for proper ghosting
     const headers: any = {
       'X-Session-Token': token
@@ -311,7 +278,6 @@ app.get('/functions', async (req, res) => {
 
     if (accountid) {
       headers['x-pn-delegated-account-id'] = accountid;
-      console.log('[Functions] Using x-pn-delegated-account-id header:', accountid);
     }
 
     // Step 1: Get all packages at account level
@@ -329,10 +295,8 @@ app.get('/functions', async (req, res) => {
     );
 
     const packages = packagesResponse.data?.data || [];
-    console.log('[Functions] Found', packages.length, 'packages at account level');
 
     if (packages.length === 0) {
-      console.log('[Functions] No packages found');
       return res.json({ modules: [] });
     }
 
@@ -355,7 +319,6 @@ app.get('/functions', async (req, res) => {
 
         const latestRevision = revisionsResponse.data?.data?.[0];
         if (!latestRevision) {
-          console.log(`[Functions] No revisions for package ${pkg.name}`);
           return null;
         }
 
@@ -374,7 +337,6 @@ app.get('/functions', async (req, res) => {
         );
 
         const deployments = deploymentsResponse.data?.data || [];
-        console.log(`[Functions] Package ${pkg.name} (${latestRevision.id}): ${deployments.length} total deployments`);
 
         // Filter to only deployments for THIS keyset and that are RUNNING
         const keysetDeployments = deployments.filter((d: any) => 
@@ -382,15 +344,12 @@ app.get('/functions', async (req, res) => {
         );
 
         if (keysetDeployments.length === 0) {
-          console.log(`[Functions] No RUNNING deployments for package ${pkg.name} on keyset ${keyid}`);
           return null;
         }
 
         // Take the most recent running deployment (first one since sorted by createdDttm DESC)
         const latestDeployment = keysetDeployments[0];
         const functionDeployments = latestDeployment.functionDeployments || [];
-        
-        console.log(`[Functions] ✓ Package ${pkg.name} has ${functionDeployments.length} functions running on keyset ${keyid}`);
 
         return {
           id: pkg.id,
@@ -407,26 +366,17 @@ app.get('/functions', async (req, res) => {
           }))
         };
       } catch (err: any) {
-        console.error(`[Functions] Error fetching data for package ${pkg.name}:`, err.message);
         return null;
       }
     });
 
     const modules = (await Promise.all(modulesPromises)).filter(m => m !== null);
 
-    console.log('[Functions] ✓ Found', modules.length, 'packages with RUNNING deployments on keyset', keyid);
-
     return res.json({ modules });
   } catch (error: any) {
     // Handle 404 as "no functions configured" not an error
     if (error.response?.status === 404) {
-      console.log('[Functions] ✓ 404 response - no functions configured for this keyset');
       return res.json({ modules: [] });
-    }
-
-    console.error('[Functions] ✗ Endpoint failed:', error.response?.status || error.message);
-    if (error.response?.data) {
-      console.error('[Functions] Error details:', error.response.data);
     }
 
     // Return empty modules array for any error
@@ -449,11 +399,8 @@ app.get('/events-actions', async (req, res) => {
   }
 
   if (!subscribekey) {
-    console.log(`[Events&Actions] No subscribe key provided for key ${keyid}`);
     return res.json({ listeners: [], actions: [] });
   }
-
-  console.log(`[Events&Actions] Fetching for subscribekey ${subscribekey}, account ${accountid}`);
 
   // Build headers with delegated account ID for ghosting
   const headers: any = {
@@ -468,7 +415,6 @@ app.get('/events-actions', async (req, res) => {
   try {
     // The correct endpoint: /api/keysets/{subscribeKey}/event-listeners
     const endpoint = `${INTERNAL_ADMIN_URL}/api/keysets/${subscribekey}/event-listeners?page=1&limit=100`;
-    console.log(`[Events&Actions] GET: ${endpoint}`);
     
     const response = await axios.get(endpoint, {
       headers,
@@ -476,7 +422,6 @@ app.get('/events-actions', async (req, res) => {
     });
 
     const data = response.data;
-    console.log(`[Events&Actions] SUCCESS - got ${data.total || 0} event listeners`);
 
     // Parse the response - data.data contains array of event listeners
     // Each listener has embedded actions array
@@ -511,11 +456,8 @@ app.get('/events-actions', async (req, res) => {
       }
     }
 
-    console.log(`[Events&Actions] ✓ Found ${listeners.length} listeners, ${actions.length} unique actions`);
     return res.json({ listeners, actions });
   } catch (error: any) {
-    const status = error.response?.status || 'ERR';
-    console.log(`[Events&Actions] FAILED ${status}: ${error.message}`);
     return res.json({ listeners: [], actions: [] });
   }
 });

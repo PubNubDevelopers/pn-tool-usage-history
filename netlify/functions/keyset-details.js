@@ -30,15 +30,12 @@ exports.handler = async (event) => {
     // The response might be wrapped in 'result' or returned directly
     const data = response.data?.result || response.data || {};
 
-    console.log(`[keyset-details] Key ${keyid}: Retrieved details`);
-
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     };
   } catch (error) {
-    console.error('Keyset details error:', error.response?.data || error.message);
     return {
       statusCode: error.response?.status || 500,
       headers: { 'Content-Type': 'application/json' },

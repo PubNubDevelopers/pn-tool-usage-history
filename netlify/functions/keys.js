@@ -32,7 +32,6 @@ exports.handler = async (event) => {
       body: JSON.stringify(response.data.result || response.data || []),
     };
   } catch (error) {
-    console.error('Keys error:', error.response?.data || error.message);
     return {
       statusCode: error.response?.status || 500,
       headers: { 'Content-Type': 'application/json' },

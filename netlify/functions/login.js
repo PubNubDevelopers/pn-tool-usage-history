@@ -18,8 +18,6 @@ exports.handler = async (event) => {
   }
 
   try {
-    console.log('Attempting authentication for:', username);
-    
     // Step 1: Authenticate with internal-admin.pubnub.com
     const authResponse = await axios.post(
       `${INTERNAL_ADMIN_URL}/api/me`,
@@ -27,7 +25,6 @@ exports.handler = async (event) => {
       { timeout: 20000 }
     );
 
-    console.log('Auth successful, userId:', authResponse.data.id);
     const { id: userId, token } = authResponse.data;
 
     // Step 2: Get accounts
@@ -39,8 +36,6 @@ exports.handler = async (event) => {
       }
     );
 
-    console.log('Accounts fetched:', accountsResponse.data.length || 0);
-
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'application/json' },
@@ -50,13 +45,6 @@ exports.handler = async (event) => {
       }),
     };
   } catch (error) {
-    console.error('Login error:', error.message);
-    console.error('Error details:', JSON.stringify({
-      status: error.response?.status,
-      data: error.response?.data,
-      code: error.code,
-    }));
-    
     return {
       statusCode: error.response?.status || 500,
       headers: { 'Content-Type': 'application/json' },

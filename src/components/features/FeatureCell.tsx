@@ -217,17 +217,9 @@ export default function FeatureCell({
         const hasRunning = functionsConfig.runningFunctions > 0;
         const colorClass = hasRunning ? 'text-green-500' : 'text-pn-text-secondary';
         return (
-          <div className="flex items-center justify-center gap-1 text-sm whitespace-nowrap">
-            <span className="text-pn-text-secondary text-xs">M:</span>
-            <span className={`${colorClass} font-medium`}>
-              {functionsConfig.totalModules}
-            </span>
-            <span className="text-pn-text-secondary">/</span>
-            <span className="text-pn-text-secondary text-xs">F:</span>
-            <span className={`${colorClass} font-medium`}>
-              {functionsConfig.totalFunctions}
-            </span>
-          </div>
+          <span className={`${colorClass} font-medium text-sm whitespace-nowrap`}>
+            M{functionsConfig.totalModules}/F{functionsConfig.totalFunctions}
+          </span>
         );
       }
     }
@@ -238,17 +230,9 @@ export default function FeatureCell({
         const hasRunning = eventsActionsConfig.runningListeners > 0 || eventsActionsConfig.runningActions > 0;
         const colorClass = hasRunning ? 'text-green-500' : 'text-pn-text-secondary';
         return (
-          <div className="flex items-center justify-center gap-1 text-sm whitespace-nowrap">
-            <span className="text-pn-text-secondary text-xs">E:</span>
-            <span className={`${colorClass} font-medium`}>
-              {eventsActionsConfig.totalListeners}
-            </span>
-            <span className="text-pn-text-secondary">/</span>
-            <span className="text-pn-text-secondary text-xs">A:</span>
-            <span className={`${colorClass} font-medium`}>
-              {eventsActionsConfig.totalActions}
-            </span>
-          </div>
+          <span className={`${colorClass} font-medium text-sm whitespace-nowrap`}>
+            E{eventsActionsConfig.totalListeners}/A{eventsActionsConfig.totalActions}
+          </span>
         );
       }
     }

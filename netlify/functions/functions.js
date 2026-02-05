@@ -43,7 +43,6 @@ exports.handler = async (event) => {
       };
     }
 
-    console.error('Functions error:', error.response?.data || error.message);
     return {
       statusCode: error.response?.status || 500,
       headers: { 'Content-Type': 'application/json' },

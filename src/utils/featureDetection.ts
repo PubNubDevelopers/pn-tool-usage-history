@@ -37,8 +37,6 @@ export function parseMessagePersistenceConfig(apiResponse: any): MessagePersiste
     // The keyset object has properties as a nested object
     const props = apiResponse?.properties || {};
 
-    console.log('[parseMessagePersistenceConfig] properties keys sample:', Object.keys(props).slice(0, 30));
-
     // Helper to get value - skip objects with created/modified metadata
     const getValue = (key: string): any => {
       const val = props[key];
@@ -52,7 +50,6 @@ export function parseMessagePersistenceConfig(apiResponse: any): MessagePersiste
     const storageVal = getValue('storage') ?? getValue('history') ?? getValue('message_storage_ttl');
     const enabled = storageVal === 1 || storageVal === true;
 
-    console.log('[parseMessagePersistenceConfig] storage value:', storageVal, 'enabled:', enabled);
     if (!enabled) return null;
 
     // Get retention days
@@ -85,10 +82,8 @@ export function parseMessagePersistenceConfig(apiResponse: any): MessagePersiste
       includePresenceEvents: checkFlag('include_presence_events') || checkFlag('presence_store_event_messages'),
     };
 
-    console.log('[parseMessagePersistenceConfig] Final config:', config);
     return config;
   } catch (error) {
-    console.error('Error parsing message persistence config:', error);
     return null;
   }
 }
@@ -101,10 +96,6 @@ export function parsePresenceConfig(apiResponse: any): PresenceConfig | null {
     // The keyset object has properties as a nested object with metadata
     // We need to check the properties object's keys for actual configuration
     const props = apiResponse?.properties || {};
-
-    console.log('[parsePresenceConfig] Full apiResponse keys:', Object.keys(apiResponse).slice(0, 30));
-    console.log('[parsePresenceConfig] properties type:', typeof props);
-    console.log('[parsePresenceConfig] properties keys sample:', Object.keys(props).slice(0, 30));
 
     // Helper to get value - properties might be objects with created/modified, or direct values
     const getValue = (key: string): any => {
@@ -120,7 +111,6 @@ export function parsePresenceConfig(apiResponse: any): PresenceConfig | null {
     const presenceVal = getValue('presence');
     const enabled = presenceVal === 1 || presenceVal === true;
 
-    console.log('[parsePresenceConfig] presence value:', presenceVal, 'enabled:', enabled);
     if (!enabled) return null;
 
     // Get integer values from properties
@@ -149,10 +139,8 @@ export function parsePresenceConfig(apiResponse: any): PresenceConfig | null {
       activeNoticeChannel: getValue('presence_active_notice_channel') || getValue('active_notice_channel'),
     };
 
-    console.log('[parsePresenceConfig] Final config:', config);
     return config;
   } catch (error) {
-    console.error('Error parsing presence config:', error);
     return null;
   }
 }
@@ -163,8 +151,6 @@ export function parsePresenceConfig(apiResponse: any): PresenceConfig | null {
 export function parseAccessManagerConfig(apiResponse: any): AccessManagerConfig | null {
   try {
     const props = apiResponse?.properties || {};
-
-    console.log('[parseAccessManagerConfig] properties keys sample:', Object.keys(props).slice(0, 30));
 
     const getValue = (key: string): any => {
       const val = props[key];
@@ -178,7 +164,6 @@ export function parseAccessManagerConfig(apiResponse: any): AccessManagerConfig 
     const pamVal = getValue('pam') ?? getValue('access_manager');
     const enabled = pamVal === 1 || pamVal === true;
 
-    console.log('[parseAccessManagerConfig] pam value:', pamVal, 'enabled:', enabled);
     if (!enabled) return null;
 
     const getIntValue = (key: string, defaultValue: number): number => {
@@ -201,10 +186,8 @@ export function parseAccessManagerConfig(apiResponse: any): AccessManagerConfig 
       revokeEnabled: checkFlag('pam_revoke_token_enabled'),
     };
 
-    console.log('[parseAccessManagerConfig] Final config:', config);
     return config;
   } catch (error) {
-    console.error('Error parsing access manager config:', error);
     return null;
   }
 }
@@ -215,8 +198,6 @@ export function parseAccessManagerConfig(apiResponse: any): AccessManagerConfig 
 export function parsePushConfig(apiResponse: any): PushConfig | null {
   try {
     const props = apiResponse?.properties || {};
-
-    console.log('[parsePushConfig] properties keys sample:', Object.keys(props).slice(0, 30));
 
     const getValue = (key: string): any => {
       const val = props[key];
@@ -238,7 +219,6 @@ export function parsePushConfig(apiResponse: any): PushConfig | null {
 
     // Only return config if at least one push service is enabled
     if (!apnsEnabled && !gcmEnabled && !w3cEnabled && !mpnsEnabled) {
-      console.log('[parsePushConfig] No push services enabled');
       return null;
     }
 
@@ -254,10 +234,8 @@ export function parsePushConfig(apiResponse: any): PushConfig | null {
       mpns: mpnsEnabled ? { enabled: true } : undefined,
     };
 
-    console.log('[parsePushConfig] Final config:', config);
     return config;
   } catch (error) {
-    console.error('Error parsing push config:', error);
     return null;
   }
 }
@@ -268,8 +246,6 @@ export function parsePushConfig(apiResponse: any): PushConfig | null {
 export function parseAppContextConfig(apiResponse: any): AppContextConfig | null {
   try {
     const props = apiResponse?.properties || {};
-
-    console.log('[parseAppContextConfig] properties keys sample:', Object.keys(props).slice(0, 30));
 
     const getValue = (key: string): any => {
       const val = props[key];
@@ -283,7 +259,6 @@ export function parseAppContextConfig(apiResponse: any): AppContextConfig | null
     const objectsVal = getValue('objects') ?? getValue('app_context');
     const enabled = objectsVal === 1 || objectsVal === true;
 
-    console.log('[parseAppContextConfig] objects value:', objectsVal, 'enabled:', enabled);
     if (!enabled) return null;
 
     const checkFlag = (key: string): boolean => {
@@ -302,10 +277,8 @@ export function parseAppContextConfig(apiResponse: any): AppContextConfig | null
       disallowGetAllChannelMetadata: checkFlag('pam_objects_disallow_getallchannels'),
     };
 
-    console.log('[parseAppContextConfig] Final config:', config);
     return config;
   } catch (error) {
-    console.error('Error parsing app context config:', error);
     return null;
   }
 }
@@ -316,8 +289,6 @@ export function parseAppContextConfig(apiResponse: any): AppContextConfig | null
 export function parseFilesConfig(apiResponse: any): FilesConfig | null {
   try {
     const props = apiResponse?.properties || {};
-
-    console.log('[parseFilesConfig] properties keys sample:', Object.keys(props).slice(0, 30));
 
     const getValue = (key: string): any => {
       const val = props[key];
@@ -331,7 +302,6 @@ export function parseFilesConfig(apiResponse: any): FilesConfig | null {
     const filesVal = getValue('files_enabled') ?? getValue('files');
     const enabled = filesVal === 1 || filesVal === true;
 
-    console.log('[parseFilesConfig] files value:', filesVal, 'enabled:', enabled);
     if (!enabled) return null;
 
     const getIntValue = (key: string, defaultValue: number): number => {
@@ -349,10 +319,8 @@ export function parseFilesConfig(apiResponse: any): FilesConfig | null {
       region: getValue('files_region') || 'us-east-1',
     };
 
-    console.log('[parseFilesConfig] Final config:', config);
     return config;
   } catch (error) {
-    console.error('Error parsing files config:', error);
     return null;
   }
 }
@@ -365,20 +333,15 @@ export function parseFilesConfig(apiResponse: any): FilesConfig | null {
  */
 export function parseFunctionsConfig(apiResponse: any): FunctionsConfig | null {
   try {
-    console.log('[parseFunctionsConfig] Raw API response:', JSON.stringify(apiResponse).substring(0, 500));
-
     // Handle empty response
     if (!apiResponse || Object.keys(apiResponse).length === 0) {
-      console.log('[parseFunctionsConfig] Empty response, no functions configured');
       return null;
     }
 
     const modules = apiResponse?.modules || [];
-    console.log('[parseFunctionsConfig] Found modules:', modules.length);
 
     // If no modules, return null (no functions configured)
     if (modules.length === 0) {
-      console.log('[parseFunctionsConfig] No modules found, returning null');
       return null;
     }
 
@@ -388,7 +351,6 @@ export function parseFunctionsConfig(apiResponse: any): FunctionsConfig | null {
     const parsedModules = modules.map((module: any) => {
       // Functions can be in different fields depending on API version
       const functions = module.functions || module.function_revisions || [];
-      console.log(`[parseFunctionsConfig] Module "${module.name}" has ${functions.length} functions`);
 
       totalFunctions += functions.length;
 
@@ -424,10 +386,8 @@ export function parseFunctionsConfig(apiResponse: any): FunctionsConfig | null {
       runningFunctions,
     };
 
-    console.log('[parseFunctionsConfig] Final config:', JSON.stringify(config));
     return config;
   } catch (error) {
-    console.error('[parseFunctionsConfig] Error parsing functions config:', error);
     return null;
   }
 }
@@ -438,12 +398,8 @@ export function parseFunctionsConfig(apiResponse: any): FunctionsConfig | null {
  */
 export function parseEventsActionsConfig(apiResponse: any): EventsActionsConfig | null {
   try {
-    console.log('[parseEventsActionsConfig] Raw API response:', JSON.stringify(apiResponse).substring(0, 500));
-    
     const listeners = apiResponse?.listeners || apiResponse?.event_listeners || [];
     const actions = apiResponse?.actions || [];
-
-    console.log(`[parseEventsActionsConfig] Found ${listeners.length} listeners, ${actions.length} actions`);
 
     if (listeners.length === 0 && actions.length === 0) return null;
 
@@ -481,10 +437,8 @@ export function parseEventsActionsConfig(apiResponse: any): EventsActionsConfig 
       runningActions,
     };
 
-    console.log('[parseEventsActionsConfig] Final config:', JSON.stringify(config));
     return config;
   } catch (error) {
-    console.error('[parseEventsActionsConfig] Error:', error);
     return null;
   }
 }

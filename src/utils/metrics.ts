@@ -128,32 +128,9 @@ export function processChartData(
     return { date, replicated, edge, signals, functions, messageActions, total, mau };
   });
   
-  // Debug MAU data
-  const nonZeroMAU = dataPoints.filter(p => p.mau > 0);
-  if (nonZeroMAU.length > 0) {
-    console.log(`Found ${nonZeroMAU.length} days with MAU data. Sample:`, nonZeroMAU[0]);
-  } else {
-    console.log('No MAU data found. Available metrics:', Object.keys(usage).filter(k => k.toLowerCase().includes('uuid') || k.toLowerCase().includes('user') || k.toLowerCase().includes('mau') || k.toLowerCase().includes('channel')));
-  }
-
-  // Debug: log sample data points
-  if (dataPoints.length > 0) {
-    console.log(`Generated ${dataPoints.length} daily data points for granularity: ${granularity}`);
-    const nonZeroPoints = dataPoints.filter(p => p.total > 0 || p.replicated > 0 || p.edge > 0 || p.signals > 0);
-    console.log(`Non-zero data points: ${nonZeroPoints.length}`);
-    if (nonZeroPoints.length > 0) {
-      console.log('Sample non-zero point:', nonZeroPoints[0]);
-    }
-  }
-
   // Aggregate by granularity if needed
   if (granularity !== 'day') {
-    const aggregated = aggregateByGranularity(dataPoints, granularity);
-    console.log(`Aggregated to ${aggregated.length} ${granularity} data points`);
-    if (aggregated.length > 0) {
-      console.log('Sample aggregated point:', aggregated[0]);
-    }
-    return aggregated;
+    return aggregateByGranularity(dataPoints, granularity);
   }
 
   return dataPoints;

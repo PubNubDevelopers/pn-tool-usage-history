@@ -85,11 +85,6 @@ export default function UsageSummary() {
 
         if (keysResponse.ok) {
           const keys = await keysResponse.json();
-          
-          // Debug: log first key to see structure
-          if (keys.length > 0) {
-            console.log('Sample key structure:', keys[0]);
-          }
 
           // For each key, fetch usage with caching
           for (const key of keys) {
@@ -100,8 +95,6 @@ export default function UsageSummary() {
               if (!keyUsage) {
                 // Not cached, fetch from API
                 keyUsage = await fetchUsageForKey(key.id, startDate, endDate);
-              } else {
-                console.log(`Using cached data for key ${key.id}`);
               }
               
               // Process monthly data
@@ -144,7 +137,6 @@ export default function UsageSummary() {
                 appUsage.totalUsage += keyTotal;
               }
             } catch (err) {
-              console.error(`Failed to fetch usage for key ${key.id}:`, err);
               // Continue with next key
             }
           }
@@ -159,7 +151,6 @@ export default function UsageSummary() {
       usageData.sort((a, b) => b.totalUsage - a.totalUsage);
       setAppUsageData(usageData);
     } catch (err: any) {
-      console.error('Failed to fetch usage data:', err);
       setError(err.message || 'Failed to fetch usage data');
     } finally {
       setLoading(false);

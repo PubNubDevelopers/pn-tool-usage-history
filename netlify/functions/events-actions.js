@@ -37,21 +37,15 @@ exports.handler = async (event) => {
     appid ? `${INTERNAL_ADMIN_URL}/api/v1/blocks/app/${appid}/event_handler` : null,
   ].filter(Boolean);
 
-  console.log(`[events-actions] Trying ${endpoints.length} endpoints for key ${keyid}, subscribekey: ${subscribekey?.substring(0, 20)}...`);
-  
   const results = [];
   
   for (const endpoint of endpoints) {
     try {
-      console.log(`[events-actions] Trying: ${endpoint}`);
       const response = await axios.get(endpoint, {
         headers,
         timeout: 10000,
       });
 
-      const responseData = JSON.stringify(response.data).substring(0, 1000);
-      console.log(`[events-actions] SUCCESS ${response.status} from ${endpoint}`);
-      console.log(`[events-actions] Response data: ${responseData}`);
       results.push({ endpoint, status: response.status, data: response.data });
 
       const data = response.data || {};
@@ -148,7 +142,6 @@ exports.handler = async (event) => {
 
       // If we found any data, return it
       if (listeners.length > 0 || actions.length > 0) {
-        console.log(`[events-actions] Found ${listeners.length} listeners, ${actions.length} actions`);
         return {
           statusCode: 200,
           headers: { 'Content-Type': 'application/json' },
@@ -156,18 +149,11 @@ exports.handler = async (event) => {
         };
       }
     } catch (error) {
-      const status = error.response?.status || 'N/A';
-      const errorData = error.response?.data ? JSON.stringify(error.response.data).substring(0, 200) : error.message;
-      console.log(`[events-actions] FAILED ${status} from ${endpoint}: ${errorData}`);
       // Continue to next endpoint
     }
   }
 
-  // Log summary of what we found
-  console.log(`[events-actions] Summary: ${results.length} successful responses out of ${endpoints.length} endpoints tried`);
-
   // No data found from any endpoint
-  console.log(`[events-actions] Key ${keyid}: No events & actions found from any endpoint`);
   return {
     statusCode: 200,
     headers: { 'Content-Type': 'application/json' },

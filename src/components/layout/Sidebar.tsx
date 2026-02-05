@@ -52,7 +52,7 @@ export default function Sidebar() {
       try {
         setSearchHistory(JSON.parse(history));
       } catch (err) {
-        console.error('Failed to load search history:', err);
+        // Ignore invalid history data
       }
     }
   }, []);
@@ -105,7 +105,7 @@ export default function Sidebar() {
             }
           }
         } catch (err) {
-          console.error(`Failed to calculate usage for key ${key.id}:`, err);
+          // Continue with next key
         }
       }
       

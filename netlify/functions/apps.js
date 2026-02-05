@@ -26,19 +26,12 @@ exports.handler = async (event) => {
       }
     );
 
-    console.log('Apps response for owner', ownerid, ':', {
-      totalApps: response.data.result?.length || 0,
-      total: response.data.total,
-      hasResult: !!response.data.result
-    });
-
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(response.data),
     };
   } catch (error) {
-    console.error('Apps error:', error.response?.data || error.message);
     return {
       statusCode: error.response?.status || 500,
       headers: { 'Content-Type': 'application/json' },

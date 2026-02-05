@@ -153,23 +153,6 @@ export default function Dashboard() {
     getMaxValue(usage.active_users)
   ) : 0;
 
-  // Debug: log what metrics we actually have
-  useEffect(() => {
-    if (usage) {
-      console.log('Available metrics:', Object.keys(usage));
-      console.log('Sample metric structure:', Object.entries(usage)[0]);
-      
-      // Debug MAU specifically - prioritize fields that exist
-      const mauFields = ['uuid', 'key_ip_ua', 'channel', 'mtd_uuid', 'pn_uuid', 'unique_users', 'mau', 'monthly_active_users', 'active_users'];
-      const foundMauFields = mauFields.filter(field => usage[field] && getMaxValue(usage[field]) > 0);
-      if (foundMauFields.length > 0) {
-        console.log('MAU fields found (using MAX value):', foundMauFields.map(f => `${f}: ${formatNumber(getMaxValue(usage[f]))}`).join(', '));
-      } else {
-        console.log('No MAU fields found with data');
-      }
-    }
-  }, [usage]);
-
   // Process chart data
   const chartData = usage ? processChartData(usage, startDate, endDate, granularity) : [];
   const featureData = usage ? processFeatureData(usage) : [];
