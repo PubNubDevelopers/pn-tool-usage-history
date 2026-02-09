@@ -3,7 +3,6 @@ import { useAuth } from '../../context/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Building2, FolderOpen, Key, LogOut, Loader2, Search, X, BarChart3, TrendingUp, ArrowDownWideNarrow, SortAsc, CheckSquare } from 'lucide-react';
 import { formatNumber, getTimeRangeLabel, calculateUsageTotals } from '../../utils/metrics';
-import { UsageData } from '../../types';
 
 interface UsageSummary {
   transactions: number;
@@ -31,7 +30,6 @@ export default function Sidebar() {
     isLoading,
     startDate,
     endDate,
-    fetchUsageForKey,
     getCachedUsageForKey,
   } = useAuth();
 
@@ -42,7 +40,7 @@ export default function Sidebar() {
   const [sortByUsage, setSortByUsage] = useState(true); // true = by usage, false = by name
   
   // Store usage summaries for apps and keys
-  const [appUsageSummaries, setAppUsageSummaries] = useState<Record<number, UsageSummary>>({});
+  const [appUsageSummaries] = useState<Record<number, UsageSummary>>({});
   const [keyUsageSummaries, setKeyUsageSummaries] = useState<Record<number, UsageSummary>>({});
 
   // Load search history on mount

@@ -12,7 +12,7 @@ const INTERNAL_ADMIN_URL = 'https://internal-admin.pubnub.com';
 
 // Test endpoint
 app.get('/test', (_req, res) => {
-  res.json({ status: 'ok', message: 'PubNub Account Usage API is running' });
+  res.json({ status: 'ok', message: 'PubNub Internal Admin Framework API is running' });
 });
 
 // Login - authenticate and get accounts
@@ -508,5 +508,10 @@ app.get('/key-usage', async (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`🚀 PubNub Account Usage API running on port ${port}`);
+  console.log('\n' + '='.repeat(80));
+  console.log('⚠️  INTERNAL TOOL - VPN REQUIRED');
+  console.log('🔒 Connecting to: internal-admin.pubnub.com');
+  console.log('🚫 DO NOT deploy to public servers');
+  console.log('='.repeat(80));
+  console.log(`🚀 PubNub Internal Admin Framework API running on port ${port}\n`);
 });

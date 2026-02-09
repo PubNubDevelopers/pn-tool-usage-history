@@ -1,5 +1,5 @@
 {
-  "name": "pn-account-usage-server",
+  "name": "pn-internal-admin-framework",
   "version": "1.0.0",
   "type": "module",
   "scripts": {

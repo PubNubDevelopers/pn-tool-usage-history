@@ -1,0 +1,115 @@
+# Dependencies
+node_modules
+server/node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build outputs
+dist
+build
+.next
+out
+.cache
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# CI/CD
+.github
+.gitlab-ci.yml
+.travis.yml
+.circleci
+
+# IDE and editor files
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+
+# Environment files (NEVER include in Docker image)
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+.env.*.local
+*.env
+server/.env
+server/.env.local
+
+# Keep .env.example (safe to include as documentation)
+!.env.example
+!server/.env.example
+
+# Netlify (outdated configuration - exclude from image)
+.netlify
+netlify.toml
+
+# Testing
+coverage
+.nyc_output
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+__tests__
+test
+tests
+
+# Documentation (reduce image size, except essential files)
+*.md
+!README.md
+!SECURITY.md
+docs
+.github
+LICENSE
+
+# TypeScript build files
+tsconfig.tsbuildinfo
+*.tsbuildinfo
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+tmp
+temp
+*.tmp
+*.temp
+
+# Docker files (don't include in image)
+Dockerfile*
+.dockerignore
+docker-compose.yml
+docker-compose.*.yml
+
+# Plans and local development
+.claude
+*.plan.md
+
+# Misc
+.eslintcache
+.stylelintcache

@@ -274,7 +274,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const keysToDelete: string[] = [];
       
       // Find cache entries with old date ranges
-      newCache.forEach((value, key) => {
+      newCache.forEach((_value, key) => {
         const parts = key.split('-');
         if (parts.length >= 5) {
           const cachedStart = parts[parts.length - 2];

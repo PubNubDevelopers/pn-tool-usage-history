@@ -27,6 +27,16 @@ dist-ssr
 .env
 .env.local
 .env.production
+server/.env
 
-# Netlify
+# Keep .env.example files (safe to commit)
+!.env.example
+!server/.env.example
+
+# Netlify (deprecated - no longer used)
 .netlify
+
+# Docker
+Dockerfile.backup
+*.dockerfile.old
+docker-compose.override.yml
